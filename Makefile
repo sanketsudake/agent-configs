@@ -18,6 +18,9 @@ PI_EXTENSIONS := \
 	permission-gate.ts \
 	protected-paths.ts \
 	status-line.ts \
+	todo.ts \
+	notify.ts \
+	handoff.ts \
 	subagent
 
 .PHONY: install uninstall sync-skills sync-extensions

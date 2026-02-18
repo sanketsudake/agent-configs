@@ -1,0 +1,9 @@
+{
+  "lastChangelogVersion": "0.52.10",
+  "packages": [
+    "npm:@isaacraja/pi-vertex-claude",
+    "npm:pi-finder-subagent",
+    "npm:pi-subdir-context",
+    "npm:pi-librarian"
+  ]
+}

@@ -6,8 +6,9 @@ PI_SKILLS_REPO := https://github.com/badlogic/pi-skills
 PI_SKILLS_CACHE := /tmp/pi-skills
 PI_SKILLS_DIR := $(CURDIR)/pi/skills
 
-PI_MONO_DIR := $(realpath $(CURDIR)/../pi-mono)
-PI_MONO_EXTENSIONS_SRC := $(PI_MONO_DIR)/packages/coding-agent/examples/extensions
+PI_MONO_REPO := https://github.com/badlogic/pi-mono
+PI_MONO_CACHE := /tmp/pi-mono
+PI_MONO_EXTENSIONS_SRC := $(PI_MONO_CACHE)/packages/coding-agent/examples/extensions
 PI_EXTENSIONS_DIR := $(CURDIR)/pi/extensions
 
 PI_EXTENSIONS := \
@@ -40,6 +41,11 @@ sync-skills:
 	done
 
 sync-extensions:
+	if [ -d $(PI_MONO_CACHE)/.git ]; then \
+		git -C $(PI_MONO_CACHE) pull --ff-only; \
+	else \
+		git clone --depth=1 $(PI_MONO_REPO) $(PI_MONO_CACHE); \
+	fi
 	mkdir -p $(PI_EXTENSIONS_DIR)
 	for ext in $(PI_EXTENSIONS); do \
 		cp -r $(PI_MONO_EXTENSIONS_SRC)/$$ext $(PI_EXTENSIONS_DIR)/; \

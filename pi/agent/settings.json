@@ -1,9 +1,11 @@
 {
-  "lastChangelogVersion": "0.52.10",
+  "lastChangelogVersion": "0.53.0",
   "packages": [
     "npm:@isaacraja/pi-vertex-claude",
     "npm:pi-finder-subagent",
     "npm:pi-subdir-context",
     "npm:pi-librarian"
-  ]
+  ],
+  "defaultProvider": "google-vertex-claude",
+  "defaultModel": "claude-opus-4-5@20251101"
 }

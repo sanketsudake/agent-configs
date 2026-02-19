@@ -6,6 +6,11 @@
     "npm:pi-subdir-context",
     "npm:pi-librarian"
   ],
+  "skills": ["~/.pi/skills"],
+  "extensions": ["~/.pi/extensions"],
   "defaultProvider": "google-vertex-claude",
-  "defaultModel": "claude-opus-4-5@20251101"
+  "defaultModel": "claude-opus-4-5@20251101",
+  "compaction": {
+    "enabled": true
+  }
 }

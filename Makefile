@@ -9,7 +9,9 @@ PI_SKILLS_DIR := $(CURDIR)/skills
 CLAUDE_CONFIG_DIRS := $(HOME)/.claude-personal $(HOME)/.claude-work
 SKILL_LINK_TARGETS := $(PI_TARGET) $(CLAUDE_CONFIG_DIRS)
 
-PLUGINS_FILE := $(CURDIR)/plugins.txt
+CLAUDE_DIR := $(CURDIR)/claude
+PLUGINS_FILE := $(CLAUDE_DIR)/plugins.txt
+CLAUDE_MD_FILE := $(CLAUDE_DIR)/CLAUDE.md
 
 PI_MONO_REPO := https://github.com/badlogic/pi-mono
 PI_MONO_CACHE := /tmp/pi-mono
@@ -30,13 +32,13 @@ PI_EXTENSIONS := \
 
 SHELL := /bin/bash
 
-.PHONY: install uninstall sync-skills sync-extensions link-skills unlink-skills plugins-check
+.PHONY: install uninstall sync-skills sync-extensions link-skills unlink-skills link-claude-md unlink-claude-md plugins-check
 
-install: link-skills
+install: link-skills link-claude-md
 	mkdir -p $(PI_TARGET)
 	$(STOW) --dir=$(STOW_DIR) --target=$(PI_TARGET) --adopt pi
 
-uninstall: unlink-skills
+uninstall: unlink-skills unlink-claude-md
 	$(STOW) --dir=$(STOW_DIR) --target=$(PI_TARGET) --delete pi
 
 link-skills:
@@ -57,6 +59,31 @@ unlink-skills:
 	for target in $(SKILL_LINK_TARGETS); do \
 		link=$$target/skills; \
 		if [ -L $$link ] && [ "$$(readlink $$link)" = "$(PI_SKILLS_DIR)" ]; then \
+			rm $$link; \
+			echo "unlinked: $$link"; \
+		fi; \
+	done
+
+link-claude-md:
+	@test -f $(CLAUDE_MD_FILE) || { echo "missing: $(CLAUDE_MD_FILE)"; exit 1; }
+	for target in $(CLAUDE_CONFIG_DIRS); do \
+		mkdir -p $$target; \
+		link=$$target/CLAUDE.md; \
+		if [ -L $$link ]; then \
+			rm $$link; \
+		elif [ -f $$link ]; then \
+			backup=$$link.bak.$$(date +%Y%m%d%H%M%S); \
+			mv $$link $$backup; \
+			echo "backed up: $$link -> $$backup"; \
+		fi; \
+		ln -s $(CLAUDE_MD_FILE) $$link; \
+		echo "linked: $$link -> $(CLAUDE_MD_FILE)"; \
+	done
+
+unlink-claude-md:
+	for target in $(CLAUDE_CONFIG_DIRS); do \
+		link=$$target/CLAUDE.md; \
+		if [ -L $$link ] && [ "$$(readlink $$link)" = "$(CLAUDE_MD_FILE)" ]; then \
 			rm $$link; \
 			echo "unlinked: $$link"; \
 		fi; \

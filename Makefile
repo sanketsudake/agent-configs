@@ -4,7 +4,12 @@ PI_TARGET := $(HOME)/.pi
 
 PI_SKILLS_REPO := https://github.com/badlogic/pi-skills
 PI_SKILLS_CACHE := /tmp/pi-skills
-PI_SKILLS_DIR := $(CURDIR)/pi/skills
+PI_SKILLS_DIR := $(CURDIR)/skills
+
+CLAUDE_CONFIG_DIRS := $(HOME)/.claude-personal $(HOME)/.claude-work
+SKILL_LINK_TARGETS := $(PI_TARGET) $(CLAUDE_CONFIG_DIRS)
+
+PLUGINS_FILE := $(CURDIR)/plugins.txt
 
 PI_MONO_REPO := https://github.com/badlogic/pi-mono
 PI_MONO_CACHE := /tmp/pi-mono
@@ -23,14 +28,66 @@ PI_EXTENSIONS := \
 	handoff.ts \
 	subagent
 
-.PHONY: install uninstall sync-skills sync-extensions
+SHELL := /bin/bash
 
-install:
+.PHONY: install uninstall sync-skills sync-extensions link-skills unlink-skills plugins-check
+
+install: link-skills
 	mkdir -p $(PI_TARGET)
 	$(STOW) --dir=$(STOW_DIR) --target=$(PI_TARGET) --adopt pi
 
-uninstall:
+uninstall: unlink-skills
 	$(STOW) --dir=$(STOW_DIR) --target=$(PI_TARGET) --delete pi
+
+link-skills:
+	mkdir -p $(PI_SKILLS_DIR)
+	for target in $(SKILL_LINK_TARGETS); do \
+		mkdir -p $$target; \
+		link=$$target/skills; \
+		if [ -L $$link ]; then \
+			rm $$link; \
+		elif [ -d $$link ]; then \
+			rmdir $$link 2>/dev/null || { echo "skip: $$link is a non-empty directory"; continue; }; \
+		fi; \
+		ln -s $(PI_SKILLS_DIR) $$link; \
+		echo "linked: $$link -> $(PI_SKILLS_DIR)"; \
+	done
+
+unlink-skills:
+	for target in $(SKILL_LINK_TARGETS); do \
+		link=$$target/skills; \
+		if [ -L $$link ] && [ "$$(readlink $$link)" = "$(PI_SKILLS_DIR)" ]; then \
+			rm $$link; \
+			echo "unlinked: $$link"; \
+		fi; \
+	done
+
+plugins-check:
+	@test -f $(PLUGINS_FILE) || { echo "missing: $(PLUGINS_FILE)"; exit 1; }
+	@command -v jq >/dev/null || { echo "jq required"; exit 1; }
+	@desired=$$(grep -v '^[[:space:]]*#' $(PLUGINS_FILE) | grep -v '^[[:space:]]*$$' | sort -u); \
+	for target in $(CLAUDE_CONFIG_DIRS); do \
+		echo "== $$target =="; \
+		file=$$target/plugins/installed_plugins.json; \
+		if [ ! -f $$file ]; then \
+			echo "  no installed_plugins.json"; \
+			continue; \
+		fi; \
+		installed=$$(jq -r '.plugins | to_entries[] | select(.value | map(.scope) | index("user")) | .key' $$file | sort -u); \
+		missing=$$(comm -23 <(echo "$$desired") <(echo "$$installed")); \
+		extra=$$(comm -13 <(echo "$$desired") <(echo "$$installed")); \
+		if [ -n "$$missing" ]; then \
+			echo "  missing (run /plugin install <name> in this profile):"; \
+			echo "$$missing" | sed 's/^/    /'; \
+		fi; \
+		if [ -n "$$extra" ]; then \
+			echo "  extra (user-scoped, not in plugins.txt):"; \
+			echo "$$extra" | sed 's/^/    /'; \
+		fi; \
+		if [ -z "$$missing" ] && [ -z "$$extra" ]; then \
+			echo "  in sync"; \
+		fi; \
+	done
 
 sync-skills:
 	if [ -d $(PI_SKILLS_CACHE)/.git ]; then \

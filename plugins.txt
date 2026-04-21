@@ -1,0 +1,10 @@
+# Desired user-scoped Claude plugins (shared across all claude configs).
+# Format: <name>@<marketplace>, one per line. Blank lines and # comments ignored.
+# Run `make plugins-check` to see drift per config.
+# Install missing ones manually via `/plugin install <name>` in the target profile.
+
+superpowers@claude-plugins-official
+frontend-design@claude-plugins-official
+context7@claude-plugins-official
+gopls-lsp@claude-plugins-official
+pr-review-toolkit@claude-plugins-official

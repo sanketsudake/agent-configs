@@ -12,6 +12,8 @@ SKILL_LINK_TARGETS := $(PI_TARGET) $(CLAUDE_CONFIG_DIRS)
 CLAUDE_DIR := $(CURDIR)/claude
 PLUGINS_FILE := $(CLAUDE_DIR)/plugins.txt
 CLAUDE_MD_FILE := $(CLAUDE_DIR)/CLAUDE.md
+COMMANDS_DIR := $(CLAUDE_DIR)/commands
+RULES_DIR := $(CLAUDE_DIR)/rules
 
 PI_MONO_REPO := https://github.com/badlogic/pi-mono
 PI_MONO_CACHE := /tmp/pi-mono
@@ -32,13 +34,13 @@ PI_EXTENSIONS := \
 
 SHELL := /bin/bash
 
-.PHONY: install uninstall sync-skills sync-extensions link-skills unlink-skills link-claude-md unlink-claude-md plugins-check
+.PHONY: install uninstall sync-skills sync-extensions link-skills unlink-skills link-claude-md unlink-claude-md link-commands unlink-commands link-rules unlink-rules plugins-check
 
-install: link-skills link-claude-md
+install: link-skills link-claude-md link-commands link-rules
 	mkdir -p $(PI_TARGET)
 	$(STOW) --dir=$(STOW_DIR) --target=$(PI_TARGET) --adopt pi
 
-uninstall: unlink-skills unlink-claude-md
+uninstall: unlink-skills unlink-claude-md unlink-commands unlink-rules
 	$(STOW) --dir=$(STOW_DIR) --target=$(PI_TARGET) --delete pi
 
 link-skills:
@@ -84,6 +86,52 @@ unlink-claude-md:
 	for target in $(CLAUDE_CONFIG_DIRS); do \
 		link=$$target/CLAUDE.md; \
 		if [ -L $$link ] && [ "$$(readlink $$link)" = "$(CLAUDE_MD_FILE)" ]; then \
+			rm $$link; \
+			echo "unlinked: $$link"; \
+		fi; \
+	done
+
+link-commands:
+	mkdir -p $(COMMANDS_DIR)
+	for target in $(CLAUDE_CONFIG_DIRS); do \
+		mkdir -p $$target; \
+		link=$$target/commands; \
+		if [ -L $$link ]; then \
+			rm $$link; \
+		elif [ -d $$link ]; then \
+			rmdir $$link 2>/dev/null || { echo "skip: $$link is a non-empty directory"; continue; }; \
+		fi; \
+		ln -s $(COMMANDS_DIR) $$link; \
+		echo "linked: $$link -> $(COMMANDS_DIR)"; \
+	done
+
+unlink-commands:
+	for target in $(CLAUDE_CONFIG_DIRS); do \
+		link=$$target/commands; \
+		if [ -L $$link ] && [ "$$(readlink $$link)" = "$(COMMANDS_DIR)" ]; then \
+			rm $$link; \
+			echo "unlinked: $$link"; \
+		fi; \
+	done
+
+link-rules:
+	mkdir -p $(RULES_DIR)
+	for target in $(CLAUDE_CONFIG_DIRS); do \
+		mkdir -p $$target; \
+		link=$$target/rules; \
+		if [ -L $$link ]; then \
+			rm $$link; \
+		elif [ -d $$link ]; then \
+			rmdir $$link 2>/dev/null || { echo "skip: $$link is a non-empty directory"; continue; }; \
+		fi; \
+		ln -s $(RULES_DIR) $$link; \
+		echo "linked: $$link -> $(RULES_DIR)"; \
+	done
+
+unlink-rules:
+	for target in $(CLAUDE_CONFIG_DIRS); do \
+		link=$$target/rules; \
+		if [ -L $$link ] && [ "$$(readlink $$link)" = "$(RULES_DIR)" ]; then \
 			rm $$link; \
 			echo "unlinked: $$link"; \
 		fi; \

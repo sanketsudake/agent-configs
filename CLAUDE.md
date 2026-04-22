@@ -7,13 +7,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 A dotfiles-style config repo that provisions two tools across two Claude profiles (personal/work):
 
 - **pi** (the `pi-mono` coding agent) — config lives under `pi/` and is stowed into `~/.pi` via GNU stow.
-- **Claude Code** — a shared global `CLAUDE.md` and a shared `skills/` directory are symlinked into `~/.claude-personal/` and `~/.claude-work/`.
+- **Claude Code** — a shared global `CLAUDE.md`, `skills/`, `commands/`, and `rules/` are symlinked into `~/.claude-personal/` and `~/.claude-work/`.
 
 There is no application to build/test/lint. The `Makefile` is the primary interface.
 
 ## Makefile targets
 
-- `make install` — runs `link-skills`, `link-claude-md`, then `stow --adopt pi` into `~/.pi`. Safe to re-run; it replaces existing symlinks and backs up real files it would overwrite.
+- `make install` — runs `link-skills`, `link-claude-md`, `link-commands`, `link-rules`, then `stow --adopt pi` into `~/.pi`. Safe to re-run; it replaces existing symlinks and backs up real files it would overwrite.
 - `make uninstall` — reverses the above.
 - `make sync-skills` — clones/pulls `github.com/badlogic/pi-skills` into `/tmp/pi-skills` and copies each skill dir into `./skills/`. Skills are vendored, so local edits to files under `skills/<upstream-name>/` are overwritten on next sync.
 - `make sync-extensions` — clones/pulls `github.com/badlogic/pi-mono` into `/tmp/pi-mono` and copies the whitelisted set (see `PI_EXTENSIONS` in the Makefile) from `packages/coding-agent/examples/extensions` into `./pi/extensions/`. Same vendoring caveat applies.
@@ -26,6 +26,7 @@ There is no application to build/test/lint. The `Makefile` is the primary interf
 - **`pi/` is stowed with `--adopt`.** On first `make install`, stow moves any pre-existing files in `~/.pi` into this repo, replacing them with symlinks. That means `pi/agent/settings.json`, `pi/extensions/*.ts`, and `pi/prompts/` are the live files the agent reads — edits here take effect immediately in `~/.pi/...`. The `.pi/` directory in the repo root is unrelated scaffolding (empty).
 - **`pi/extensions/subagent/` is a directory extension** (listed without `.ts` suffix in `PI_EXTENSIONS`); the rest are single-file TS extensions. Adding a new upstream extension requires editing `PI_EXTENSIONS` in the Makefile.
 - **`skills/` is the single source of truth** for skills across pi and both Claude profiles. `link-skills` symlinks `$(CURDIR)/skills` into `~/.pi/skills`, `~/.claude-personal/skills`, `~/.claude-work/skills`.
+- **`claude/commands/` and `claude/rules/`** are the single source of truth for user-scoped slash commands and rules across both Claude profiles. `link-commands` / `link-rules` symlink them into `~/.claude-personal/` and `~/.claude-work/` (not into `~/.pi/` — pi doesn't consume these).
 - **`plugins.txt` is desired-state only.** Installation is manual per-profile; the Makefile only reports drift. Lines are `<name>@<marketplace>`; blanks and `#` comments are ignored.
 
 ## Conventions when editing

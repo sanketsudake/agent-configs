@@ -26,7 +26,9 @@ There is no application to build/test/lint. The `Makefile` is the primary interf
 - **`pi/` is stowed with `--adopt`.** On first `make install`, stow moves any pre-existing files in `~/.pi` into this repo, replacing them with symlinks. That means `pi/agent/settings.json`, `pi/extensions/*.ts`, and `pi/prompts/` are the live files the agent reads — edits here take effect immediately in `~/.pi/...`. The `.pi/` directory in the repo root is unrelated scaffolding (empty).
 - **`pi/extensions/subagent/` is a directory extension** (listed without `.ts` suffix in `PI_EXTENSIONS`); the rest are single-file TS extensions. Adding a new upstream extension requires editing `PI_EXTENSIONS` in the Makefile.
 - **`skills/` is the single source of truth** for skills across pi and both Claude profiles. `link-skills` symlinks `$(CURDIR)/skills` into `~/.pi/skills`, `~/.claude-personal/skills`, `~/.claude-work/skills`.
-- **`claude/commands/` and `claude/rules/`** are the single source of truth for user-scoped slash commands and rules across both Claude profiles. `link-commands` / `link-rules` symlink them into `~/.claude-personal/` and `~/.claude-work/` (not into `~/.pi/` — pi doesn't consume these).
+- **`claude/commands/`, `claude/rules/`, and `claude/scripts/`** are the single source of truth for user-scoped slash commands, rules, and helper scripts across both Claude profiles.
+`link-commands` / `link-rules` / `link-scripts` symlink them into `~/.claude-personal/` and `~/.claude-work/` (not into `~/.pi/` — pi doesn't consume these).
+The shared `CLAUDE.md` references scripts via `$CLAUDE_CONFIG_DIR/scripts/...` so the path resolves correctly under either profile.
 - **`plugins.txt` is desired-state only.** Installation is manual per-profile; the Makefile only reports drift. Lines are `<name>@<marketplace>`; blanks and `#` comments are ignored.
 
 ## Conventions when editing

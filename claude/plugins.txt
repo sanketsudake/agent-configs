@@ -8,3 +8,4 @@ frontend-design@claude-plugins-official
 context7@claude-plugins-official
 gopls-lsp@claude-plugins-official
 pr-review-toolkit@claude-plugins-official
+serena@claude-plugins-official

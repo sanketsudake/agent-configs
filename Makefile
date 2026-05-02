@@ -14,6 +14,7 @@ PLUGINS_FILE := $(CLAUDE_DIR)/plugins.txt
 CLAUDE_MD_FILE := $(CLAUDE_DIR)/CLAUDE.md
 COMMANDS_DIR := $(CLAUDE_DIR)/commands
 RULES_DIR := $(CLAUDE_DIR)/rules
+SCRIPTS_DIR := $(CLAUDE_DIR)/scripts
 
 PI_MONO_REPO := https://github.com/badlogic/pi-mono
 PI_MONO_CACHE := /tmp/pi-mono
@@ -34,13 +35,13 @@ PI_EXTENSIONS := \
 
 SHELL := /bin/bash
 
-.PHONY: install uninstall sync-skills sync-extensions link-skills unlink-skills link-claude-md unlink-claude-md link-commands unlink-commands link-rules unlink-rules plugins-check
+.PHONY: install uninstall sync-skills sync-extensions link-skills unlink-skills link-claude-md unlink-claude-md link-commands unlink-commands link-rules unlink-rules link-scripts unlink-scripts plugins-check
 
-install: link-skills link-claude-md link-commands link-rules
+install: link-skills link-claude-md link-commands link-rules link-scripts
 	mkdir -p $(PI_TARGET)
 	$(STOW) --dir=$(STOW_DIR) --target=$(PI_TARGET) --adopt pi
 
-uninstall: unlink-skills unlink-claude-md unlink-commands unlink-rules
+uninstall: unlink-skills unlink-claude-md unlink-commands unlink-rules unlink-scripts
 	$(STOW) --dir=$(STOW_DIR) --target=$(PI_TARGET) --delete pi
 
 link-skills:
@@ -132,6 +133,29 @@ unlink-rules:
 	for target in $(CLAUDE_CONFIG_DIRS); do \
 		link=$$target/rules; \
 		if [ -L $$link ] && [ "$$(readlink $$link)" = "$(RULES_DIR)" ]; then \
+			rm $$link; \
+			echo "unlinked: $$link"; \
+		fi; \
+	done
+
+link-scripts:
+	mkdir -p $(SCRIPTS_DIR)
+	for target in $(CLAUDE_CONFIG_DIRS); do \
+		mkdir -p $$target; \
+		link=$$target/scripts; \
+		if [ -L $$link ]; then \
+			rm $$link; \
+		elif [ -d $$link ]; then \
+			rmdir $$link 2>/dev/null || { echo "skip: $$link is a non-empty directory"; continue; }; \
+		fi; \
+		ln -s $(SCRIPTS_DIR) $$link; \
+		echo "linked: $$link -> $(SCRIPTS_DIR)"; \
+	done
+
+unlink-scripts:
+	for target in $(CLAUDE_CONFIG_DIRS); do \
+		link=$$target/scripts; \
+		if [ -L $$link ] && [ "$$(readlink $$link)" = "$(SCRIPTS_DIR)" ]; then \
 			rm $$link; \
 			echo "unlinked: $$link"; \
 		fi; \

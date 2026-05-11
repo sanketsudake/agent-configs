@@ -35,7 +35,7 @@ PI_EXTENSIONS := \
 
 SHELL := /bin/bash
 
-.PHONY: install uninstall sync-skills sync-extensions link-skills unlink-skills link-claude-md unlink-claude-md link-commands unlink-commands link-rules unlink-rules link-scripts unlink-scripts plugins-check
+.PHONY: install uninstall sync-skills sync-extensions link-skills unlink-skills link-claude-md unlink-claude-md link-commands unlink-commands link-rules unlink-rules link-scripts unlink-scripts plugins-check plugins-sync
 
 install: link-skills link-claude-md link-commands link-rules link-scripts
 	mkdir -p $(PI_TARGET)
@@ -186,6 +186,32 @@ plugins-check:
 		if [ -z "$$missing" ] && [ -z "$$extra" ]; then \
 			echo "  in sync"; \
 		fi; \
+	done
+
+plugins-sync:
+	@test -f $(PLUGINS_FILE) || { echo "missing: $(PLUGINS_FILE)"; exit 1; }
+	@command -v jq >/dev/null || { echo "jq required"; exit 1; }
+	@desired=$$(grep -v '^[[:space:]]*#' $(PLUGINS_FILE) | grep -v '^[[:space:]]*$$' | sort -u); \
+	for target in $(CLAUDE_CONFIG_DIRS); do \
+		case $$target in \
+			*personal*) wrap=pclaude ;; \
+			*work*)     wrap=wclaude ;; \
+			*)          wrap="claude (with CLAUDE_CONFIG_DIR=$$target)" ;; \
+		esac; \
+		echo "== $$target =="; \
+		file=$$target/plugins/installed_plugins.json; \
+		if [ ! -f $$file ]; then \
+			installed=""; \
+		else \
+			installed=$$(jq -r '.plugins | to_entries[] | select(.value | map(.scope) | index("user")) | .key' $$file | sort -u); \
+		fi; \
+		missing=$$(comm -23 <(echo "$$desired") <(echo "$$installed")); \
+		if [ -z "$$missing" ]; then \
+			echo "  in sync"; \
+			continue; \
+		fi; \
+		echo "  Start a session with \`$$wrap\` and paste:"; \
+		echo "$$missing" | sed 's|^|    /plugin install |'; \
 	done
 
 sync-skills:

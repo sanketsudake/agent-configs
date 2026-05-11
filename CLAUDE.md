@@ -17,7 +17,8 @@ There is no application to build/test/lint. The `Makefile` is the primary interf
 - `make uninstall` — reverses the above.
 - `make sync-skills` — clones/pulls `github.com/badlogic/pi-skills` into `/tmp/pi-skills` and copies each skill dir into `./skills/`. Skills are vendored, so local edits to files under `skills/<upstream-name>/` are overwritten on next sync.
 - `make sync-extensions` — clones/pulls `github.com/badlogic/pi-mono` into `/tmp/pi-mono` and copies the whitelisted set (see `PI_EXTENSIONS` in the Makefile) from `packages/coding-agent/examples/extensions` into `./pi/extensions/`. Same vendoring caveat applies.
-- `make plugins-check` — diffs `claude/plugins.txt` (desired, user-scoped) against `<CLAUDE_CONFIG_DIR>/plugins/installed_plugins.json` for each profile, reporting missing/extra. Install missing ones manually with `/plugin install <name>` inside the target profile. Requires `jq`.
+- `make plugins-check` — diffs `claude/plugins.txt` (desired, user-scoped) against `<CLAUDE_CONFIG_DIR>/plugins/installed_plugins.json` for each profile, reporting missing/extra. Requires `jq`.
+- `make plugins-sync` — same diff as `plugins-check` but emits the exact `/plugin install <name>` lines per profile, prefixed with the wrapper to enter (`pclaude` / `wclaude`). Copy-paste into a session in the right profile to close the drift. Installation itself stays manual — Claude Code has no headless `/plugin install`.
 
 ## Architecture notes that are easy to miss
 

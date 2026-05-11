@@ -15,6 +15,13 @@ For each conversation, show:
 - First 60-80 characters of the conversation topic
 - Session ID (if available)
 
+**Group entries by `sessionId` and pick the FIRST non-meta prompt per session** as the topic.
+A prompt is "meta" if its `display` (trimmed) starts with `/` or `!`, or equals (case-insensitive) one of: `quit`, `exit`, `yes`, `no`, `y`, `n`, or is empty.
+If a session has only meta prompts, fall back to the most recent prompt for that session.
+Without this filter, most sessions show `/quit` or `/exit` because those tend to be the last entry per session.
+
+Sort sessions by the timestamp of the selected prompt, most recent first.
+
 IMPORTANT: Format as a plain text table with properly padded columns (NOT markdown tables).
 
 Focus on the most recent 10 conversations in the first table. If there are more, show another 5-7 in an "Additional Recent Conversations" table.

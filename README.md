@@ -72,14 +72,13 @@ Run `make skills-list` to see each one's source and status.
 | `gccli` | Google Calendar CLI: list calendars, view/create/update events, check availability. |
 | `gdcli` | Google Drive CLI: list, search, upload, download, and share files and folders. |
 | `gmcli` | Gmail CLI: search, read threads, send, manage drafts, labels, and attachments. |
+| `harvest-automation` | Mine past Claude Code sessions for recurring patterns; turn them into skills, CLAUDE.md entries, and memory. |
 | `make-pr-easy-to-review` | Clean noisy history, improve PR descriptions, and annotate diffs without changing behavior. |
 | `pr-review-canvas` | Generate an interactive HTML PR-review walkthrough from `gh` API data. |
-| `retrospect` | End-of-session analysis of nudges, wasted tokens, and missed skills; proposes durable fixes. |
 | `source-code-for-gh-advisory` | Obtain and reproduce the vulnerable source referenced by a GHSA/CVE. |
 | `thermo-nuclear-code-quality-review` | Extremely strict maintainability review (abstraction, giant files, spaghetti). |
 | `transcribe` | Local speech-to-text on Apple Silicon macOS. |
 | `vscode` | VS Code integration for viewing diffs and comparing files. |
-| `workflow-from-chats` | Mine recent chats for working preferences and turn them into skills/rules/docs. |
 | `youtube-transcript` | Fetch YouTube transcripts for summarization and analysis. |
 
 ### Claude commands, agents, rules

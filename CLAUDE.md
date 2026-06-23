@@ -45,7 +45,7 @@ The two kinds differ only in structure:
 Each managed resource carries a `.source.json` sidecar:
 
 - **remote** — `{"repo","subpath","ref","commit","fetched_at"}`, where `commit` is the resolved SHA of `ref` at fetch time.
-- **local** — `{"repo": null, ...}` for resources authored in this repo (e.g. the `retrospect` skill); `update` and `delete` treat them as having no upstream.
+- **local** — `{"repo": null, ...}` for resources authored in this repo (e.g. the `harvest-automation` skill); `update` and `delete` treat them as having no upstream.
 - A resource with no `.source.json` is reported as `unmanaged`.
 
 Targets (each `skills-*` has an `agents-*` twin taking the same variables):

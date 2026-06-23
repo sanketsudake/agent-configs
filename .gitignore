@@ -1,3 +1,9 @@
 # Superpowers working docs (brainstorming specs, implementation plans) —
 # kept locally as design artifacts, not checked in.
 docs/superpowers/
+
+# Runtime binary downloaded by the transcribe skill (transcribe.sh writes the
+# parakeet-cpp-transcribe binary into the skill's parent /bin dir). The skill
+# docs call this an "ignored" dir; under the symlinked Claude profiles it
+# resolves into the repo tree, so ignore it to keep the blob out of git.
+skills/bin/

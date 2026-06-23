@@ -12,18 +12,24 @@ Chrome DevTools Protocol tools for agent-assisted web automation. These tools co
 Run once before first use:
 
 ```bash
-cd {baseDir}/browser-tools
+cd {baseDir}
 npm install
 ```
 
 ## Start Chrome
 
 ```bash
-{baseDir}/browser-start.js              # Fresh profile
-{baseDir}/browser-start.js --profile    # Copy user's profile (cookies, logins)
+{baseDir}/browser-start.js                    # Fresh profile
+{baseDir}/browser-start.js --list-profiles    # List the user's Chrome profiles
+{baseDir}/browser-start.js --profile          # Copy the "Default" Chrome profile
+{baseDir}/browser-start.js --profile personal # Copy a specific profile (cookies, logins)
 ```
 
-Launch Chrome with remote debugging on `:9222`. Use `--profile` to preserve user's authentication state.
+Launch Chrome with remote debugging on `:9222`. Use `--profile` to preserve the user's authentication state.
+
+When the user has multiple Chrome profiles, pass the one to use after `--profile` — either its display name (e.g. `personal`, `sanket.infracloud`) or its directory (e.g. `"Profile 2"`). Run `--list-profiles` first to see the options; without a name, `--profile` defaults to `Default`, which is often not the profile the user means. The chosen profile is synced into `~/.cache/browser-tools` and opened via `--profile-directory`, so Chrome lands directly on it instead of the profile picker.
+
+To switch profiles, close any Chrome already running on `:9222` first — `browser-start.js` reuses an existing instance rather than relaunching.
 
 ## Navigate
 

@@ -1,10 +1,10 @@
 ---
-name: learn-from-history
-description: Use when the user wants to turn past Claude Code work into reusable automation — invoked as /learn-from-history, optionally with a window like "7d". Triggers include end-of-session review, "what should we automate", "mine my recent sessions", recurring manual workflows, repeated corrections, repeated permission prompts, or preferences worth capturing as a skill, CLAUDE.md entry, or memory.
+name: harvest-automation
+description: Use when the user wants to turn past Claude Code work into reusable automation — invoked as /harvest-automation, optionally with a window like "7d". Triggers include end-of-session review, "what should we automate", "mine my recent sessions", recurring manual workflows, repeated corrections, repeated permission prompts, or preferences worth capturing as a skill, CLAUDE.md entry, or memory.
 disable-model-invocation: true
 ---
 
-# Learn From History
+# Harvest Automation
 
 Mine past Claude Code work for **recurring** patterns and turn them into durable, reusable automation: skills, CLAUDE.md entries, memory, and permission allowlists.
 
@@ -23,11 +23,11 @@ No emojis.
 
 ## When to use
 
-The user runs `/learn-from-history` explicitly — usually once real work is done, or when they want to mine recent sessions.
+The user runs `/harvest-automation` explicitly — usually once real work is done, or when they want to mine recent sessions.
 Do not invoke unprompted.
 
-- `/learn-from-history` — analyze the **current session**.
-- `/learn-from-history 7d` (or "last week") — analyze a **window** of recent sessions.
+- `/harvest-automation` — analyze the **current session**.
+- `/harvest-automation 7d` (or "last week") — analyze a **window** of recent sessions.
 
 **Do not use** when: the user asked for a plain summary (just summarize), the scope has < ~4 user-turns of real interaction, or there were no tool calls (nothing to learn from).
 Say so and stop.
@@ -100,7 +100,7 @@ Emit exactly this structure, organized by artifact type.
 Keep it under ~400 lines; compress, don't truncate.
 
 ```
-# Learn From History
+# Harvest Automation
 
 ## Scope
 <current session | last N days: M sessions across K projects>
@@ -137,7 +137,7 @@ Reply: `apply skills`, `apply claude`, `apply memory`, `apply all`, or `skip`.
 
 - **`apply skills`** — for each proposed skill, invoke `superpowers:writing-skills` with the drafted proposal.
   Do not write skill files directly.
-- **`apply claude` / `apply memory` / `apply all`** — Write the payload (schema below) to `/tmp/learn-from-history-<sessionid-or-timestamp>.json`, then call:
+- **`apply claude` / `apply memory` / `apply all`** — Write the payload (schema below) to `/tmp/harvest-automation-<sessionid-or-timestamp>.json`, then call:
 
 ```bash
 {baseDir}/apply-suggestions.sh <claude|memory|all> <payload.json>

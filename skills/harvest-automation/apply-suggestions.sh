@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# apply-suggestions.sh — apply approved learn-from-history suggestions to CLAUDE.md
+# apply-suggestions.sh — apply approved harvest-automation suggestions to CLAUDE.md
 # and/or memory files. (Skills are NOT applied here — they are handed to the
 # superpowers:writing-skills skill, which authors and validates them.)
 #
@@ -17,7 +17,7 @@
 #   - CLAUDE.md is backed up to CLAUDE.md.bak.<ts> before every write.
 #   - Never overwrites existing content; only appends.
 #   - Refuses to touch CLAUDE.md if it has >100 lines of uncommitted diff
-#     AND is inside a git repo (protects mid-edit work). Override with LFH_FORCE=1.
+#     AND is inside a git repo (protects mid-edit work). Override with HARVEST_FORCE=1.
 #   - Memory index (MEMORY.md) is appended to, not rewritten. Duplicate
 #     index lines are skipped.
 
@@ -51,8 +51,8 @@ apply_claude_md() {
     if [[ -f "$path" ]] && git -C "$(dirname "$path")" rev-parse --show-toplevel >/dev/null 2>&1; then
         diff_lines=$(git -C "$(dirname "$path")" diff --numstat -- "$path" 2>/dev/null | awk '{print $1+$2}')
         diff_lines=${diff_lines:-0}
-        if (( diff_lines > 100 )) && [[ -z "${LFH_FORCE:-}" ]]; then
-            echo "claude: refusing — $path has $diff_lines lines of uncommitted diff. Commit first, or re-run with LFH_FORCE=1." >&2
+        if (( diff_lines > 100 )) && [[ -z "${HARVEST_FORCE:-}" ]]; then
+            echo "claude: refusing — $path has $diff_lines lines of uncommitted diff. Commit first, or re-run with HARVEST_FORCE=1." >&2
             return 1
         fi
     fi

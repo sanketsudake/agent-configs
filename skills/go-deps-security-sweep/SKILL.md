@@ -1,6 +1,6 @@
 ---
 name: go-deps-security-sweep
-description: Run a grouped, bisectable Go dependency security sweep. Use when the user asks to upgrade outdated/vulnerable Go deps, run a dep security pass, or process govulncheck/Dependabot findings. Lands one commit per logical dependency group on a dedicated branch so any regression is attributable and revertable. Generic to any Go module.
+description: Run a grouped, bisectable Go dependency security sweep. Use when the user asks to upgrade outdated/vulnerable Go deps, run a dep security pass (also invoked as `go-deps-security-upgrade`), or process govulncheck/Dependabot findings. Lands one commit per logical dependency group on a dedicated branch so any regression is attributable and revertable. Generic to any Go module.
 ---
 
 # Go dependency security sweep

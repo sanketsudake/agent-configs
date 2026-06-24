@@ -1,6 +1,6 @@
 ---
 name: analyze-prometheus-tsdb
-description: Run a Prometheus TSDB snapshot that a CI job uploaded inside a local Prometheus container and query it — for before/after performance comparisons across legs and leak-vs-constant-offset questions a point-in-time pprof can't answer. Use when a CI run uploads a prometheus data backup and you need time-series (latency, goroutines, RSS, CPU) over the whole run. Generic to any project whose CI backs up its Prometheus data dir.
+description: Run a Prometheus TSDB snapshot that a CI job uploaded inside a local Prometheus container and query it — for before/after performance comparisons across legs and leak-vs-constant-offset questions a point-in-time pprof can't answer. Use when a CI run uploads a prometheus data backup and you need time-series (latency, goroutines, RSS, CPU) over the whole run, or to compare metrics before-vs-after across CI legs. Generic to any project whose CI backs up its Prometheus data dir.
 ---
 
 # Analyze a Prometheus TSDB dump from CI

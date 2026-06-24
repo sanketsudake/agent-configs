@@ -1,6 +1,6 @@
 ---
 name: watch-ci
-description: After pushing to a PR, watch its CI checks to terminal state and surface each transition as a notification instead of busy-polling. Use when you've just pushed a fix and want to know the moment a check goes green or red, or whenever the user says "watch CI", "wait for the checks", "loop on CI". Pairs with debug-ci (hand back to it on a red check).
+description: After pushing to a PR, watch its CI checks to terminal state and surface each transition as a notification instead of busy-polling. Use when you've just pushed a fix and want to know the moment a check goes green or red, or whenever the user says "watch CI", "wait for the checks", "is CI green yet", "loop on CI". Pairs with debug-ci (hand back to it on a red check) and resolve-bot-review-threads (the fix→push→resolve→re-request→watch loop).
 ---
 
 # Watch CI to terminal state

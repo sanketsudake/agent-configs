@@ -1,6 +1,6 @@
 ---
 name: debug-ci
-description: Triage and root-cause a failing GitHub Actions CI run on a PR efficiently. Use when CI is red on an open PR, a check needs triaging, the user asks "why is X failing in CI", or after a push to confirm a failure is real. Optimised for separating real regressions from pre-existing noise and getting the failing line with the cheapest log fetch first. Pairs with watch-ci for the push→monitor loop.
+description: Triage and root-cause a failing GitHub Actions CI run on a PR efficiently. Use when CI is red on an open PR, a check needs triaging, the user asks "why is X failing in CI" / "a test failed, can you check", or after a push to confirm a failure is real (also reached by the older name `debug-github-ci`). Optimised for separating real regressions from pre-existing noise and getting the failing line with the cheapest log fetch first. Pairs with watch-ci for the push→monitor loop.
 ---
 
 # Debug CI failures

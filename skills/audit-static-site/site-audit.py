@@ -169,7 +169,7 @@ def main():
 
     site_suffix = args.site_suffix
     suffix_re = re.compile(re.escape(site_suffix) + r"\s*$") if site_suffix else None
-    content_sections = tuple(args.sections.split(","))
+    content_sections = tuple(s.strip() for s in args.sections.split(",") if s.strip())
 
     root = Path(args.public).resolve()
     if not root.is_dir():

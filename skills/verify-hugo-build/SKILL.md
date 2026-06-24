@@ -1,9 +1,9 @@
 ---
-name: verify-hugo-docsy-build
-description: Use when verifying a Hugo + Docsy site build before declaring it done or pushing (triggers "does it build", "verify the site", "check the build", after editing layouts/SCSS/content). Builds the way the host runs it and explains why hugo --gc --quiet is not enough.
+name: verify-hugo-build
+description: Use when verifying a Hugo site build before declaring it done or pushing (triggers "does it build", "verify the site", after editing layouts/SCSS/content). Builds the way the host runs it and explains why hugo --gc --quiet is not enough.
 ---
 
-# Verify a Hugo + Docsy Build
+# Verify a Hugo Build
 
 ## Overview
 
@@ -24,7 +24,7 @@ hugo --minify --printPathWarnings --gc
 
 **Use the Hugo version the deploy config pins**, not a system or Homebrew Hugo.
 Find it in the deploy config (e.g. `HUGO_VERSION` in `netlify.toml`).
-Hugo 0.158+ wraps the PostCSS pipeline in Node's experimental Permission Model with a restricted filesystem scope, which breaks browserslist's parent-directory search and can hang or fail `hugo --minify` — Docsy pins `hugo_version` in its `package.json` for exactly this reason.
+Hugo 0.158+ wraps the PostCSS pipeline in Node's experimental Permission Model with a restricted filesystem scope, which breaks browserslist's parent-directory search and can hang or fail `hugo --minify` — if the theme records a tested Hugo version, pin to it.
 
 ## Reading the output
 
@@ -48,4 +48,4 @@ Use the `browser-tools` skill to automate browser interaction if needed.
 |---|---|---|
 | Used `hugo --gc --quiet` | "Clean locally" but deploy fails | Run `hugo --minify --printPathWarnings --gc` (or `./build.sh`) |
 | Used Homebrew or system Hugo | `hugo --minify` hangs or errors (`ERR_ACCESS_DENIED`) | Pin to the version in the deploy config |
-| Used Hugo non-extended build | SCSS/asset pipeline breaks | Docsy requires Hugo **extended** |
+| Used Hugo non-extended build | SCSS/asset pipeline breaks | Themes with an SCSS/asset pipeline require Hugo **extended** |

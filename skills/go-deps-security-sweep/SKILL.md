@@ -11,18 +11,12 @@ Optimised for **isolating failures**: each logical group of related deps lands a
 Project-agnostic.
 For this repo's exact dependency groups and their version-coupling rules (e.g. which deps must move in lockstep, any `replace`/`exclude` directives, codegen to re-run after a bump), read the project's `CLAUDE.md` and `.claude/resources/` — those carry the couplings that MVS will otherwise get wrong.
 
-## When to invoke
-
-Trigger phrases: "upgrade outdated Go deps", "security sweep on go.mod", "run govulncheck and fix what's found", "bump dependencies for security".
-
-Skip for a single named bump — that's `go get <pkg>@<ver>` + tidy + lint + commit, no grouping.
+Skip single-dep bumps — use `go get <pkg>@<ver>` + commit directly.
 
 ## Phase 0 — Baseline
 
-1. Branch off the default branch.
-   **Check for a stale collision first** — a prior month's sweep branch often still exists locally and on `origin` after its PR merged, so a reused name fails with "already exists" and its diff looks like a huge *reverse* (the default branch moved on).
-   If `git rev-parse --verify <branch>` succeeds, run `gh pr list --head <branch> --state all`; a MERGED PR means it's leftover — don't reuse it.
-   Use a **date-stamped** name: `git checkout <default> && git checkout -b deps/security-sweep-<YYYY-MM-DD>`.
+1. Branch off the default branch with a **date-stamped** name: `git checkout <default> && git checkout -b deps/security-sweep-<YYYY-MM-DD>`.
+   If reusing a branch name, run `git rev-parse --verify <branch>` / `gh pr list --head <branch>` to avoid colliding with a merged prior sweep.
 2. Install the scanner if missing: `go install golang.org/x/vuln/cmd/govulncheck@latest`.
 3. Capture the baseline: `govulncheck ./... | tee /tmp/govulncheck-before.txt`.
    The "affected by N vulnerabilities" line and each "Fixed in:" version dictate minimum targets.
@@ -90,12 +84,6 @@ Don't skip the whole group — a partial group is still progress.
 - **`git stash pop` hazard.**
   A clean tree makes `git stash` a silent no-op, so a later `git stash pop` unstashes a *pre-existing* WIP entry from another session and can conflict.
   Run `git stash list` before any pop; recover a contaminated tree with `git checkout HEAD -- <files>`.
-
-## Out of scope
-
-- Go toolchain version bumps.
-- Indirect-only deps (let `go mod tidy` carry them forward).
-- Major-version bumps (`v1 → v2`) — those need dedicated review, not a batch sweep.
 
 ## Canonical outline
 

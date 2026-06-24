@@ -5,14 +5,7 @@ description: Use to add LLM-friendly outputs to a Hugo site — /llms.txt and /l
 
 # Add llms.txt + markdown twins to a Hugo site
 
-Wires three generated outputs so AI agents can read the site cleanly, kept in sync with content.
-Never hand-edit `public/`.
-
-## What you add
-
-- `/llms.txt` — a link index of content sections (with canonical URLs for syndicated pages).
-- `/llms-full.txt` — full page bodies inlined.
-- A markdown twin at every page's `<url>/index.md` (raw body, shortcodes intact), advertised via `rel="alternate"`.
+Never hand-edit `public/` — these outputs are generated from content.
 
 ## Workflow
 
@@ -59,16 +52,15 @@ Never hand-edit `public/`.
    - `index.llmsfull.txt` → `layouts/index.llmsfull.txt`
    - `single.markdown.md` → `layouts/_default/single.markdown.md`
 
-   Adjust section names (`"posts"`, `"talks"`) to the target site's content sections.
-   If the site has no canonical-URL field, the `canonicalURL` references are no-ops (`.Params.canonicalURL` returns empty string).
+Adjust section names (`"posts"`, `"talks"`) to the target site's content sections.
+If the site has no canonical-URL field, the `canonicalURL` references are no-ops (`.Params.canonicalURL` returns empty string).
 
 3. Customize `index.llms.txt` for the target site:
    - Set `params.llmsIntro` in `hugo.toml`/`params.toml` to a one-sentence site description for LLM crawlers — e.g. `llmsIntro = "Technical writing on Kubernetes and platform engineering."`.
      If unset, the template falls back to `"Content by <author.name>."`.
    - Set `params.author.bio` for the About line, or edit the About section directly.
 
-4. Advertise the twin: ensure the head partial emits
-   `<link rel="alternate" type="text/markdown" href="index.md">`.
+4. Advertise the twin: ensure the head partial emits `<link rel="alternate" type="text/markdown" href="index.md">`.
    Congo does this automatically when `rel = "alternate"` is set on the output format.
 
 ## Guardrails

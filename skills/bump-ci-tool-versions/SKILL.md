@@ -11,37 +11,38 @@ Optimised for **isolating regressions**: each tool lands as its own commit, so C
 Project-agnostic.
 For this repo's known tool inventory, which workflows pin what, and any deliberately-stale pins (e.g. an old major kept on purpose to test an upgrade path), read its `CLAUDE.md` and `.claude/resources/` — re-discover dynamically (Phase 0) rather than trusting any snapshot.
 
-## When to invoke
-
-Trigger phrases: "update workflow tool versions", "bump skaffold/kind/cosign/helm", "what's outdated in our workflows", "process the dependabot github-actions PR", "CI tool refresh".
-
-Skip if the user names a single tool and version — just edit and commit.
-
 ## Scope (priority order)
 
-1. **Primary — `env:`-block `*_VERSION:` vars.**
-   Versions the workflow downloads at runtime; the main scope.
-   Dependabot does NOT touch these.
-2. **Secondary — `# vX.Y.Z` comments next to SHA-pinned `uses:` actions.**
-   Dependabot usually bumps these on a schedule, so a manual pass is catch-up if Dependabot is behind/paused.
-3. **Tertiary — version matrices** (e.g. a `kindversion:` of k8s node images).
-   Tied to the tool's support window; bump only when the underlying binary supports the newer target.
+- **Primary — `env:`-block `*_VERSION:` vars** the workflow downloads at runtime (Dependabot does NOT touch these).
+- **Secondary — `# vX.Y.Z` comments next to SHA-pinned `uses:` actions** (Dependabot usually bumps these; a manual pass is catch-up when it's behind/paused).
+- **Tertiary — version matrices** (e.g. a `kindversion:` of k8s node images), tied to the tool's support window; bump only when the underlying binary supports the newer target.
 
 Out of scope: floating constraints (`with: version: "~> v2"` — no pin to bump), and tool versions living in `Makefile`/`hack/`/`Dockerfile`/release config (those go with the build code, not the runners).
 
 ## Phase 0 — Baseline
 
-1. Branch off the default branch.
-   **Check for a stale merged collision first** (a date-stamped name avoids it): `git checkout <default> && git checkout -b ci/tool-versions-<YYYY-MM-DD>`.
-   After a recent merged sweep, most `*_VERSION:` vars already being at latest is normal, not a discovery failure.
-2. Inventory dynamically — don't trust any snapshot: ```bash grep -rnE "^\s*[A-Z_]+_VERSION:" .github/workflows/ grep -rnE "uses:.*@[a-f0-9]{40} # v" .github/workflows/   # SHA-pinned actions w/ version comments ```
-3. Resolve each tool to its upstream repo and fetch latest (`gh api` authenticates automatically): ```bash for repo in <owner1>/<tool1> <owner2>/<tool2>; do echo "$repo -> $(gh api "repos/$repo/releases/latest" --jq '.tag_name')" done ```
+Branch off the default branch with a date-stamped name (avoids a stale merged collision): `git checkout <default> && git checkout -b ci/tool-versions-<YYYY-MM-DD>`.
+
+Inventory dynamically — don't trust any snapshot:
+
+```bash
+grep -rnE "^\s*[A-Z_]+_VERSION:" .github/workflows/
+grep -rnE "uses:.*@[a-f0-9]{40} # v" .github/workflows/   # SHA-pinned actions w/ version comments
+```
+
+Resolve each tool to its upstream repo and fetch latest (`gh api` authenticates automatically):
+
+```bash
+for repo in <owner1>/<tool1> <owner2>/<tool2>; do
+  echo "$repo -> $(gh api "repos/$repo/releases/latest" --jq '.tag_name')"
+done
+```
 
 ## Phase 1 — Decide what to bump
 
-- **Patch** (`vX.Y.Z → Z+n`): take unconditionally; read notes only if it skips many patches.
-- **Minor** (`vX.Y → Y+1`): read upstream notes for breaking-ish changes — linters and build tools periodically rename/drop config keys or profiles.
-- **Major** (`vX → X+1`): don't lump into a sweep; open a separate branch with its own validation.
+Patch: take unconditionally.
+Minor: read upstream notes for renamed/dropped config keys (linters/build tools).
+Major: don't lump into a sweep — separate branch with its own validation.
 
 Flag deliberate stale pins the repo documents (e.g. an old major kept to test an upgrade path, or a matrix entry intentionally lagging) — leave them unless the user says otherwise.
 

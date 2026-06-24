@@ -5,13 +5,11 @@ description: Use when adding or fixing a mermaid diagram in a Hugo (or other sta
 
 # Authoring Mermaid Diagrams
 
-## Overview
-
-Most static-site themes render mermaid from a ` ```mermaid ` fence (or a `{{< mermaid >}}` shortcode); the constraint is the same everywhere.
-The critical constraint is the **~900 px width rule**: the content column is typically ~800 px, so a diagram whose natural (viewBox) width exceeds ~900–950 px shrinks until its text is unreadable inline.
+Most static-site themes render mermaid from a ` ```mermaid ` fence or a `{{< mermaid >}}` shortcode; the constraints below are the same everywhere.
 
 ## Width Rule
 
+The critical constraint: the content column is typically ~800 px, so a diagram whose natural (viewBox) width exceeds ~900–950 px shrinks until its text is unreadable inline.
 Keep every diagram under ~900–950 px natural width.
 
 Measure in a browser after `hugo server`:
@@ -37,7 +35,7 @@ Design choices that keep diagrams narrow:
 | `stateDiagram-v2` | Lifecycles (states and transitions) |
 
 For `sequenceDiagram`: use `autonumber`, keep to ≤4 participants, use short participant names.
-Avoid `classDiagram` in docs — it rarely fits the width rule and is seldom the right tool for documentation flows.
+Do not use `classDiagram` — it exceeds the width rule and is seldom the right tool for documentation flows.
 
 ## Step Numbers on Arrows
 

@@ -43,8 +43,7 @@ images = ["images/featured/my-post-featured.png"]
 2. Place it in `static/images/featured/`.
 3. Reference it in the `images` front-matter field (path relative to `static/`, leading slash optional).
 
-That single param drives **both** the blog-list card thumbnail **and** the OG/social preview image.
-No featured image is fine — cards fall back to a site-defined placeholder.
+That single param drives **both** the blog-list card thumbnail **and** the OG/social preview image; omitting it falls back to a site-defined placeholder.
 Do not also embed the featured image at the top of the post body; the card already shows it.
 
 ## Body Conventions
@@ -54,7 +53,6 @@ Do not also embed the featured image at the top of the post body; the card alrea
 - Use your project's version shortcodes for version strings — a hardcoded version goes stale silently.
 - Internal links as absolute paths (`/docs/usage/…`); use `{{< relref >}}` only if your project/theme supports it for regular pages — some themes restrict it to section `_index.md` paths.
 - Images get descriptive alt text; lightbox (click-to-zoom) typically wires up automatically.
-- Use your project's category set, version shortcodes, and link conventions; see the project's content conventions.
 
 ## Find the layout that actually renders a post
 
@@ -70,7 +68,8 @@ hugo server
 Check:
 - `/blog/` — card shows the thumbnail (not the fallback), correct date/author/reading time/category pill, sensible excerpt.
 - `/blog/<slug>/` — byline renders, images load, code blocks highlight.
-- Run `./build.sh` (or `hugo --minify --printPathWarnings --gc`) to catch bad front matter and broken refs; see the `verify-hugo-build` skill.
+
+Then use the `verify-hugo-build` skill to validate the full build (catches bad front matter and broken refs).
 
 ## Common Mistakes
 

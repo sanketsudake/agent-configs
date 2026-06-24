@@ -5,12 +5,7 @@ description: Use to crawl a built static-site output dir and flag SEO/UX issues 
 
 # Audit a built static site
 
-A stdlib-only crawler that walks a built output dir (`public/`) and reports SEO/UX problems as markdown. No network, no secrets.
-
-## When To Use
-
-- After a production build, before publishing.
-- As a gate in an improvement loop (`--check` exits non-zero on any ERROR).
+Run after a production build, before publishing — or as a gate in an improvement loop (`--check` exits non-zero on any ERROR).
 
 ## Workflow
 

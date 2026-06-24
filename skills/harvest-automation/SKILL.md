@@ -13,31 +13,19 @@ Mine past Claude Code work for **recurring** patterns and turn them into durable
 
 ## Core principle
 
-A pattern is worth capturing only if it **recurs** (≥ 2 occurrences across the scope) or the user explicitly asks to keep it.
-One-off events are noise — drop them.
-The goal is not to grade a session; it is to find the repeated friction and manual workflows that should become reusable assets.
-
-Technical rigor over performative praise.
+Capture a pattern only if it **recurs** (≥ 2 occurrences across the scope) or the user explicitly asks to keep it; one-offs are noise.
 Every claim needs evidence: session id, turn number, a verbatim quote (≤ 15 words), or a tool-call signature.
-No emojis.
 
 ## When to use
 
-The user runs `/harvest-automation` explicitly — usually once real work is done, or when they want to mine recent sessions.
-Do not invoke unprompted.
-
-- `/harvest-automation` — analyze the **current session**.
-- `/harvest-automation 7d` (or "last week") — analyze a **window** of recent sessions.
-
-**Do not use** when: the user asked for a plain summary (just summarize), the scope has < ~4 user-turns of real interaction, or there were no tool calls (nothing to learn from).
-Say so and stop.
+Runs only when invoked explicitly: `/harvest-automation` analyzes the **current session**; `/harvest-automation 7d` (or "last week") analyzes a **window** of recent sessions.
+Decline when the user asked for a plain summary, the scope has < ~4 user-turns of real interaction, or there were no tool calls.
 
 ## Scope and gathering
 
 Default scope is the current session.
 Reflect on the in-context conversation first.
 
-- If context was compacted (system-reminders mention compaction, or the earliest turns are missing), run `{baseDir}/find-sessions.sh` to locate the session JSONL and Read the earliest portion to recover missed turns.
 - For a window (`Nd`), run `{baseDir}/find-sessions.sh --since N` to list recent session JSONLs across **all** project dirs in the active profile, newest first.
   Recurring automation often spans repos, so scan across projects, not just the current one.
   Read enough of each to extract signals; cite the session by id/path.
@@ -74,9 +62,8 @@ Route each promoted pattern to exactly one artifact.
 Stay composable — delegate, do not reimplement.
 
 - **Skill** — a recurring multi-step workflow with clear triggers.
-  Draft a proposal (name, "Use when…" description, trigger, the steps, any scripts), then hand it off.
-  **REQUIRED SUB-SKILL:** use `superpowers:writing-skills` to author and validate it under `skills/<name>/`; mark it local with a `{"repo": null}` `.source.json`.
-  Do not scaffold skill files by hand here.
+  Draft a proposal (name, "Use when…" description, trigger, the steps, any scripts), then hand off to `superpowers:writing-skills` to author and validate it under `skills/<name>/`; mark it local with a `{"repo": null}` `.source.json`.
+  Never scaffold skill files by hand.
 - **CLAUDE.md** — a collaborator-visible project fact (build/test commands, invariants, code locations, "always use X helper").
   Applied via `{baseDir}/apply-suggestions.sh`.
 - **Memory** — a user-private preference (terse vs verbose, tool choices, workflow habits).
@@ -163,9 +150,6 @@ Reply: `apply skills`, `apply claude`, `apply memory`, `apply all`, or `skip`.
 
 - Do NOT dump the transcript.
   The report is the analysis, not a log.
-- Do NOT promote single-occurrence events (unless the user said "remember this").
-- Do NOT propose collaborator-facing CLAUDE.md entries for personal preferences (those are memory).
-- Do NOT scaffold skill files by hand — always go through `superpowers:writing-skills`.
 - Do NOT edit CLAUDE.md or memory files directly — always go through `apply-suggestions.sh` so backups and index updates stay consistent.
 - Do NOT re-run tools that already ran in-session to re-verify.
   Reuse prior results.
@@ -179,3 +163,7 @@ Reply: `apply skills`, `apply claude`, `apply memory`, `apply all`, or `skip`.
 {baseDir}/find-sessions.sh --since 7       # recent session JSONLs (last 7 days), newest first
 {baseDir}/apply-suggestions.sh <scope> <payload.json>   # apply CLAUDE.md / memory edits
 ```
+
+## Troubleshooting
+
+If context was compacted (system-reminders mention compaction, or the earliest turns are missing), run `{baseDir}/find-sessions.sh` to locate the session JSONL and Read the earliest portion to recover missed turns.

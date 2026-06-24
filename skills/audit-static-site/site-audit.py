@@ -252,8 +252,10 @@ def main():
                 if not (DESC_MIN <= len(pg.description) <= DESC_MAX):
                     warnings[f"description length (aim {DESC_MIN}-{DESC_MAX} chars)"].append(
                         f"{path} ({len(pg.description)})")
-            # thin content (posts only — talks are slide decks, legitimately short)
-            if path.startswith("/posts/") and pg.words < args.min_words:
+            # thin content (primary section only — secondary sections like
+            # talks are slide decks, legitimately short)
+            primary_prefix = "/" + content_sections[0] + "/"
+            if path.startswith(primary_prefix) and pg.words < args.min_words:
                 warnings[f"thin content (<{args.min_words} words)"].append(
                     f"{path} ({pg.words} words)")
             # missing alt

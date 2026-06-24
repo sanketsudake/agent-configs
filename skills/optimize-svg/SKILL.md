@@ -5,11 +5,6 @@ description: Use when adding or committing an SVG asset (logos, icons) to keep i
 
 # Optimizing SVG Assets
 
-## Overview
-
-Run `svgo` before committing any SVG.
-Accept the result only if it is smaller — svgo sometimes inflates already-optimized files.
-
 ## Steps
 
 ```bash
@@ -17,7 +12,7 @@ npx svgo --multipass <file.svg>
 ```
 
 - If the file shrank: keep it.
-- If the file grew or stayed the same: `git checkout -- <file.svg>` (revert).
+- If the file grew or stayed the same: `git checkout -- <file.svg>` (revert) — svgo sometimes inflates already-optimized files.
 
 ## Size Guidance
 

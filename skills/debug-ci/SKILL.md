@@ -19,10 +19,22 @@ Skip if the user already knows the root cause and wants a specific fix applied �
 
 ## Phase 0 — Separate noise from regression (do this first)
 
-1. List the PR's checks; don't read logs yet, just see who's red: ```bash gh pr checks <PR> --json name,bucket,state,link \ --jq '.[] | select(.name != null) | "\(.bucket)\t\(.name)\t\(.link)"' ``` `bucket` is one of `pass | fail | pending | skipping`.
+1. List the PR's checks; don't read logs yet, just see who's red (`bucket` is one of `pass | fail | pending | skipping`):
+
+   ```bash
+   gh pr checks <PR> --json name,bucket,state,link \
+     --jq '.[] | select(.name != null) | "\(.bucket)\t\(.name)\t\(.link)"'
+   ```
 
 2. Cross-check against the default branch.
-   If the same check is also failing there, it is **pre-existing noise** and this playbook does not apply to it: ```bash gh run list --branch <default-branch> --workflow=<ci>.yaml --limit 5 \ --json conclusion,headSha,databaseId,createdAt gh api repos/<owner>/<repo>/commits/<sha>/status \ --jq '.statuses[] | {context, state, description}'   # external checks (coverage, license, etc.) ```
+   If the same check is also failing there, it is **pre-existing noise** and this playbook does not apply to it:
+
+   ```bash
+   gh run list --branch <default-branch> --workflow=<ci>.yaml --limit 5 \
+     --json conclusion,headSha,databaseId,createdAt
+   gh api repos/<owner>/<repo>/commits/<sha>/status \
+     --jq '.statuses[] | {context, state, description}'   # external checks (coverage, license, etc.)
+   ```
 
 3. Cross out the repo's known stickers.
    The project's `CLAUDE.md`/resources usually list checks that are red on the default branch by policy (license/compliance scanners, tests needing a local Docker daemon, etc.) — don't chase those.
@@ -61,24 +73,17 @@ Generic language-agnostic ones worth knowing:
 
 ## Phase 3 — Verify the hypothesis before pushing
 
-1. **Confirm which binary actually ran.**
+1. **Confirm which binary/image actually ran.**
    Not every image is rebuilt per-PR — some are pre-built and pulled from a registry.
-   If logs show old behaviour while your source has the fix, you may be looking at a pre-built image, not your PR's build.
-   Compare the `caller`/version field in logs against your local source line numbers; the project's resources usually document which images are per-PR vs pre-built.
-2. **Read the source at the cited line before iterating on a flake.**
+   If logs show old behaviour while your source has the fix, compare the `caller`/version field in logs against your local source line numbers; you may be looking at a pre-built image, not your PR's build.
+2. **Read the source at the cited line before blaming a flake.**
    After two failed timing-based guesses, stop guessing and read the code path that produces the symptom.
-3. **Sanity-test locally** for the affected scope only (lint, focused tests, chart render) — full suites are CI's job, not yours.
 
 ## Phase 4 — Push and re-check
 
 After pushing the fix, hand off to the **watch-ci** skill to monitor checks to terminal state instead of busy-polling.
 If a check flips back to red after a fix, **don't push another fix immediately** — restart Phase 1 with the new logs.
 The new failure is often a different root cause exposed by the previous fix; reusing the old hypothesis wastes a CI cycle.
-
-## Out of scope
-
-- Fixing the underlying business logic of a failing test — once the *cause* is identified, the code change is a normal edit-test-commit.
-- Forensic analysis of already-merged breakage on the default branch — reverts/hotfixes have their own flow.
 
 ## Canonical outline
 

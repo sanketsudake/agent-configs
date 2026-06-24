@@ -11,14 +11,6 @@ A GitHub Security Advisory pins down exactly which repository, version range, an
 To analyze it locally you need the source tree at a commit where the bug is still present — *not* the patched default branch.
 This skill fetches advisory metadata with `gh`, picks the last vulnerable tag, and shallow-clones only that tag.
 
-## When to Use
-
-- User pastes a GHSA URL (e.g. `https://github.com/<owner>/<repo>/security/advisories/GHSA-xxxx-xxxx-xxxx`) or a CVE that maps to one.
-- User says "clone the affected version", "get the vulnerable code", "reproduce the advisory", "diff the fix", or similar.
-- Any security-review / patch-analysis task that needs the pre-fix tree.
-
-**Do NOT use** for general bug reports, non-security issues, or when the user explicitly wants the patched/current code.
-
 ## Workflow
 
 1. **Resolve advisory metadata via `gh`** — never scrape the HTML page.
@@ -79,7 +71,8 @@ Rules of thumb:
 
 ## Step 3 — Shallow-clone the single tag
 
-**Always** clone only the affected tag, with depth 1. Do not clone full history or multiple versions:
+**Always** clone only the affected tag, with depth 1.
+Do not clone full history or multiple versions:
 
 ```bash
 TAG="v1.6.1"
@@ -91,11 +84,7 @@ git clone --depth 1 --branch "$TAG" \
 
 Notes:
 - `--branch` accepts tag names too — this lands you in detached HEAD at that tag with one commit of history.
-- If you need to diff against the patched version later, fetch *that one* tag on top (still shallow):
-  ```bash
-  git -C "$DEST" fetch --depth 1 origin tag v1.7.0
-  git -C "$DEST" diff v1.6.1 v1.7.0 -- path/to/file
-  ```
+- If you need to diff against the patched version later, fetch *that one* tag on top (still shallow): ```bash git -C "$DEST" fetch --depth 1 origin tag v1.7.0 git -C "$DEST" diff v1.6.1 v1.7.0 -- path/to/file ```
 - Ask the user where to clone before creating directories under `$HOME` if the location isn't obvious from context.
 
 ## Step 4 — Verify the vulnerable code is present
@@ -120,32 +109,11 @@ Tell the user:
 - Confirmed vulnerable `path:line`
 - Advisory id + one-line summary
 
-## Quick Reference
-
-```bash
-GHSA="GHSA-xxxx-xxxx-xxxx"
-OWNER="acme"; REPO="widget"
-DEST="$HOME/personal/$REPO"
-
-# 1. Metadata
-gh api "/advisories/$GHSA" --jq '.vulnerabilities[0] | {vuln_range: .vulnerable_version_range, patched: .patched_versions}'
-
-# 2. Tags
-gh api "repos/$OWNER/$REPO/tags" --paginate --jq '.[].name' | sort -V -r | head
-
-# 3. Shallow clone the last vulnerable tag
-git clone --depth 1 --branch "v1.6.1" "https://github.com/$OWNER/$REPO.git" "$DEST"
-
-# 4. Verify
-grep -n 'authorize(user, "read"' "$DEST/server/routes/api/shares/shares.ts"
-```
-
 ## Common Mistakes
 
 | Mistake | Fix |
 |---|---|
 | Cloning the default branch | The fix is already merged — vulnerable code is gone. Always check out a tag *below* `patched_versions`. |
-| Cloning full history | Wastes bandwidth and disk. Use `--depth 1 --branch <tag>`. |
 | Listing tags by cloning first | Use `gh api repos/<o>/<r>/tags` instead — no clone needed to pick the tag. |
 | Guessing the affected file | The advisory description almost always names it. Parse it from `gh api` output; don't scrape HTML. |
 | Using `git checkout <tag>` after a non-tag shallow clone | `git fetch --depth 1 origin tag <tag>` first, or just re-clone with `--branch <tag>`. |
@@ -155,5 +123,6 @@ grep -n 'authorize(user, "read"' "$DEST/server/routes/api/shares/shares.ts"
 
 - About to run `git clone` without `--depth 1` → stop, add the flag.
 - About to run `git clone` without `--branch <tag>` → stop, pick the tag first.
-- Cloning more than one version "just in case" → don't. Fetch the second tag into the existing clone only if a diff is actually requested.
+- Cloning more than one version "just in case" → don't.
+  Fetch the second tag into the existing clone only if a diff is actually requested.
 - About to `curl` the advisory HTML page → use `gh api` instead.

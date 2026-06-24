@@ -13,7 +13,8 @@ This skill covers the full loop: list → fix → resolve → re-request → pol
 
 ## Ordering Rule
 
-Fix first, then resolve. Never resolve a thread before the code change has landed on the branch.
+Fix first, then resolve.
+Never resolve a thread before the code change has landed on the branch.
 
 ```
 git push origin BRANCH
@@ -92,7 +93,8 @@ query($o:String!,$r:String!,$pr:Int!){
 
 ### Pagination
 
-The queries above use `first:100`. For very large PRs add cursor pagination:
+The queries above use `first:100`.
+For very large PRs add cursor pagination:
 
 ```graphql
 reviewThreads(first:100, after: $cursor){
@@ -155,25 +157,17 @@ resolve PRRT_kwDO...B
 
 ## 3. Optional Reply Before Resolving
 
-Not required — "just resolve" is the default. Reply only when the fix needs explanation:
+Not required — "just resolve" is the default.
+Reply only when the fix needs explanation, then resolve (section 2):
 
 ```bash
-reply_resolve () {
-  local tid="$1" body="$2"
-  gh api graphql \
-    -f query='mutation($t:ID!,$b:String!){addPullRequestReviewThreadReply(input:{pullRequestReviewThreadId:$t,body:$b}){comment{id}}}' \
-    -f t="$tid" -f b="$body" >/dev/null 2>&1 && echo "  replied $tid"
-  gh api graphql \
-    -f query='mutation($t:ID!){resolveReviewThread(input:{threadId:$t}){thread{isResolved}}}' \
-    -f t="$tid" \
-    --jq '.data.resolveReviewThread.thread.isResolved' 2>&1 | sed 's/^/  resolved=/'
-}
-
-# Usage:
-reply_resolve 'PRRT_kwDO...' 'Fixed in <SHA> — explanation of what changed.'
+gh api graphql \
+  -f query='mutation($t:ID!,$b:String!){addPullRequestReviewThreadReply(input:{pullRequestReviewThreadId:$t,body:$b}){comment{id}}}' \
+  -f t='PRRT_kwDO...' -f b='Fixed in <SHA> — explanation of what changed.'
 ```
 
-**Field name difference:** `addPullRequestReviewThreadReply` takes `pullRequestReviewThreadId` (the full name), while `resolveReviewThread` takes `threadId` (short form). They are different input objects — do not swap them.
+**Field name difference:** `addPullRequestReviewThreadReply` takes `pullRequestReviewThreadId` (the full name), while `resolveReviewThread` takes `threadId` (short form).
+They are different input objects — do not swap them.
 
 ---
 
@@ -198,9 +192,10 @@ gh pr view PR_NUMBER --json id -q .id
 
 ### Discover the bot node ID
 
-Bot node IDs rotate when GitHub updates the integration. Rediscover at the start of each session.
+Bot node IDs rotate when GitHub updates the integration.
+Rediscover at the start of each session.
 
-**Approach 1 — from an existing review on a recent PR (fastest):**
+From an existing review on a recent PR (fastest):
 
 ```bash
 gh api graphql \
@@ -218,24 +213,10 @@ gh api graphql \
     | .author.id' | head -1
 ```
 
-**Approach 2 — suggestedActors on the repo:**
-
-```bash
-gh api graphql \
-  -f query='{
-    repository(owner:"OWNER",name:"REPO"){
-      suggestedActors(capabilities:[CAN_BE_ASSIGNED], first:30){
-        nodes{ __typename ... on Bot { id login } }
-      }
-    }
-  }' \
-  | jq '.data.repository.suggestedActors.nodes[]
-    | select(.login | test("[Cc]opilot"; "i"))'
-```
-
 ### Request review mutation
 
-**Use `botIds`, not `userIds`.** Passing a bot's node ID under `userIds` returns `NOT_FOUND`.
+**Use `botIds`, not `userIds`.**
+Passing a bot's node ID under `userIds` returns `NOT_FOUND`.
 
 ```bash
 nid=$(gh pr view PR_NUMBER -R OWNER/REPO --json id -q .id)
@@ -258,45 +239,7 @@ The mutation is idempotent — running it multiple times on the same PR+bot is s
 
 ## 5. Poll CI and Monitor New Threads
 
-Use the `watch-ci` skill for CI polling.
-
-Combined CI + new thread monitoring loop (stops when all CI checks settle):
-
-```bash
-prev_ci=""
-prev_threads=""
-for i in $(seq 1 80); do
-  s=$(gh pr checks PR_NUMBER --repo OWNER/REPO --json name,bucket,state 2>/dev/null || echo "[]")
-  if [ "$s" != "[]" ]; then
-    cur=$(echo "$s" | jq -r '.[] | select(.bucket!="pending") | "[CI] \(.name): \(.bucket) (\(.state))"' | sort -u)
-    comm -13 <(echo "$prev_ci") <(echo "$cur")
-    prev_ci="$cur"
-  fi
-  t=$(gh api graphql \
-    -f query='query($owner:String!,$repo:String!,$pr:Int!){
-      repository(owner:$owner,name:$repo){
-        pullRequest(number:$pr){
-          reviewThreads(first:50){
-            nodes{id isResolved comments(first:1){nodes{author{login} path body}}}
-          }
-        }
-      }
-    }' -f owner=OWNER -f repo=REPO -F pr=PR_NUMBER 2>/dev/null || echo "{}")
-  curt=$(echo "$t" | jq -r '
-    .data.repository.pullRequest.reviewThreads.nodes[]?
-    | select(.isResolved==false)
-    | select(.comments.nodes[0].author.login | test("[Cc]opilot"))
-    | "[COPILOT] \(.id) @ \(.comments.nodes[0].path)"
-  ' 2>/dev/null | sort -u)
-  comm -13 <(echo "$prev_threads") <(echo "$curt")
-  prev_threads="$curt"
-  if echo "$s" | jq -e 'length>0 and all(.[]; .bucket!="pending")' >/dev/null 2>&1; then
-    echo "ALL_CI_SETTLED"
-    break
-  fi
-  sleep 30
-done
-```
+After each fix push, re-run the unresolved-thread query; see the `watch-ci` skill for CI polling and `reference/poll-loop.md` for a combined example loop.
 
 ### Final status check
 
@@ -325,11 +268,8 @@ gh pr view PR_NUMBER --json mergeable,mergeStateStatus \
 |---|---|
 | Passing bot node ID under `userIds` | Use `botIds`. Bot IDs under `userIds` return `NOT_FOUND`. |
 | Using `gh pr edit --add-reviewer <bot-login>` | This silently drops the assignment. Use the `requestReviews` mutation. |
-| `POST .../pulls/PR/requested_reviewers` with a bot login | Returns 422 "not a collaborator". REST rejects bot accounts here. |
-| Hardcoding the bot node ID across sessions | Bot IDs rotate on GitHub integration updates. Rediscover each session via approach 1 or 2. |
+| Hardcoding the bot node ID across sessions | Bot IDs rotate on GitHub integration updates. Rediscover each session. |
 | Using `threadId` in the reply mutation | The reply mutation uses `pullRequestReviewThreadId`. Only the resolve mutation uses `threadId`. |
-| Bulk-resolving all unresolved threads | Only resolve threads where the fix actually landed or the suggestion is intentionally rejected (with a reply documenting why). |
-| Resolving before pushing the fix | Push first, then resolve. |
 | Treating `isOutdated: true` threads as blocking | Outdated threads can be resolved without a code fix — the line no longer exists. |
 
 ## Auth

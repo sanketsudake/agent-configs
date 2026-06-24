@@ -5,10 +5,7 @@ description: Use when verifying a Hugo site build before declaring it done or pu
 
 # Verify a Hugo Build
 
-## Overview
-
-Running the same build command the deploy host runs is the only reliable local verification.
-`hugo --gc --quiet` skips `--minify`, which is what exercises the PostCSS pipeline — a build that passes `--gc --quiet` can still fail in production.
+Running the same build command the deploy host runs is the only reliable local verification: `hugo --gc --quiet` skips `--minify`, which is what exercises the PostCSS pipeline — a build that passes `--gc --quiet` can still fail in production.
 
 ## Build doctrine
 
@@ -28,13 +25,9 @@ Hugo 0.158+ wraps the PostCSS pipeline in Node's experimental Permission Model w
 
 ## Reading the output
 
-A clean build:
-- Prints the full page table (title | kind | url | …) — no truncation.
-- Shows no `ERROR` or `WARN` lines.
-- Page count rises as expected (e.g., +1 for a new page, +N for a new section).
-
 Any `ERROR` is a hard build failure.
-A `WARN` about a missing partial or shortcode is a soft failure — investigate before pushing.
+A `WARN` (e.g. a missing partial or shortcode) is a soft failure — investigate before pushing.
+A clean build prints the full page table untruncated and the page count rises as expected (+1 for a new page, +N for a new section).
 
 ## When to also browser-verify
 

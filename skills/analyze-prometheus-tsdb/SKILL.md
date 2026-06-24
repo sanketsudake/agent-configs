@@ -5,10 +5,6 @@ description: Run a Prometheus TSDB snapshot that a CI job uploaded inside a loca
 
 # Analyze a Prometheus TSDB dump from CI
 
-A CI job that backs up its Prometheus data directory gives you the **entire run as time-series** — latency histograms, custom metrics, and Go runtime metrics per pod at the scrape interval.
-Unlike a pprof artifact (one idle snapshot), this answers leak-vs-constant-offset and cross-leg comparison questions.
-
-Project-agnostic.
 Check the project's `CLAUDE.md`/resources for the artifact name and metric names; the mechanics below are universal.
 
 ## Spin it up locally
@@ -40,9 +36,9 @@ Clean up with `docker rm -f <name>`.
 
 ## Per-pod, not `sum()` — the rollout-overlap artifact
 
-`sum(process_resident_memory_bytes{pod=~'<svc>.*'})` **double-counts during Deployment rollovers**: old and new pods coexist for seconds-to-minutes, and a test suite that restarts a service several times makes a leg "use" 2× the memory/goroutines of one that doesn't.
+`sum(...)` **double-counts during rollouts** — old and new pods coexist, so a leg that restarts a service several times appears to "use" 2× the memory/goroutines.
 Query **per-pod** (no `sum()`), then take avg/max across all samples of all pod generations.
-`count by ()` of the matched series tells you how many pod generations the leg churned through — a useful signal of how much restart-testing ran.
+`count by ()` of the matched series tells you how many pod generations the leg churned through.
 
 ## Leak check from the time series
 
@@ -51,6 +47,8 @@ A constant offset and a leak look identical in a snapshot; the trend separates t
 - The end-of-run baseline should land on the pprof goroutine snapshot from the same leg — that agreement cross-checks that both artifacts describe the same steady state.
 - Rise-under-load → return-to-flat-baseline = per-request goroutines, fine.
   Monotonic climb, or a baseline that ratchets up after each phase = leak; switch to the pprof goroutine fingerprint (see `analyze-go-pprof`) to name the frame.
+
+For cross-leg comparisons, normalize CPU by wall-clock (s/min) when legs differ in duration, and remember legs may run different test subsets — flag that next to any cross-leg number.
 
 ## Useful query shapes
 
@@ -64,5 +62,3 @@ go_memstats_heap_inuse_bytes{pod=~'<svc>.*'} / 1048576
 process_resident_memory_bytes{pod=~'<svc>.*'} / 1048576
 increase(process_cpu_seconds_total{pod=~'<svc>.*'}[<run-window>s])
 ```
-
-Normalize CPU by wall-clock (s/min) when legs differ in duration, and remember legs may run different test subsets — flag that next to any cross-leg number.

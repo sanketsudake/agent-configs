@@ -5,12 +5,7 @@ description: Use to generate branded 1200x630 social-share (OG/Twitter) card ima
 
 # Generate social-share (OG) card images
 
-A vendored Pillow script that renders a 1200×630 card per page: title + tags + brand over a background (Gemini-generated, supplied image, or gradient fallback).
-
-## When To Use
-
-- Adding a post/talk, or after changing a page's title or tags.
-- Generating the site-wide default card.
+Run when adding a post/talk, after changing a page's title or tags, or to generate the site-wide default card.
 
 ## Workflow
 

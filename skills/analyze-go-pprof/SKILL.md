@@ -5,9 +5,7 @@ description: Pull the heap/goroutine pprof profiles a CI job captured, separate 
 
 # Analyze Go pprof profiles from CI
 
-How to read the heap/goroutine profiles a CI job captures, classify a top consumer as leak vs baseline, and prove a fix with a before/after delta.
-
-Project-agnostic — it assumes only that the CI job captures `/debug/pprof/heap` and `/debug/pprof/goroutine?debug=1` into an artifact (often gated behind a `pprof.enabled`-style flag/profile, so the dumps exist on the runs that enable it, not arbitrary branches).
+Assumes the CI job captures `/debug/pprof/heap` and `/debug/pprof/goroutine?debug=1` into an artifact (often gated behind a `pprof.enabled`-style flag/profile, so the dumps exist on the runs that enable it, not arbitrary branches).
 Check the project's `CLAUDE.md`/resources for the exact artifact name and which services it covers.
 
 ## Download
@@ -65,14 +63,12 @@ A leaked goroutine shows up as a high count for one app frame that should be 1-p
 | k8s scheme registration, protobuf/cbor/regexp init | Baseline | Leave |
 
 Facts that drive the classification:
-- **Go runs `init()` and package-var initializers for every imported package**, regardless of which subsystem a multi-headed binary actually starts.
-  A package-scope `var log = GetLogger()` costs *every* process built from that module, not just the one that uses it.
-- **A zap logger's sampler pre-allocates ~`7 × 4096 × 16 B ≈ 448 KB`.**
-  N independent loggers ⇒ N × 448 KB, never freed (heap-bytes ÷ 448 KB ≈ logger count).
+- **Constant init cost = baseline; monotonic growth = leak.**
+  A package-scope `var log = GetLogger()` or scheme/protobuf init is allocated once and never freed but stays constant — leave it.
+  A count that climbs per request/pool/object with no bounded exit is a leak.
 - **A `SummaryVec` keeps a per-series quantile stream**; cost scales with active label combinations.
   A histogram uses fixed buckets — cheaper and aggregatable across replicas.
 - **A tiny CI cluster hides scale-dependent costs.**
-  Heap totals there may be ~16–20 MB; an informer-cache OOM that only shows at thousands of objects won't appear.
   Absence in the profile ≠ absence at scale — reason about cardinality/pod-count separately.
 
 ## Quantify a fix: before/after
@@ -92,13 +88,8 @@ go tool pprof -top -inuse_space /tmp/after/<svc>-heap.pprof  | grep -i '<allocat
 
 - **No pprof artifact on the run?**
   The branch didn't build with the profiling flag enabled, or path filters skipped the job entirely.
-- **Coverage is best-effort.**
-  Capture steps often curl with `|| echo "capture failed"` and upload with `if-no-files-found: ignore`, so a leg can ship a partial set or nothing — e.g. the service was mid-restart, or a coverage leg tore the deployment down before the collect step.
+- **Capture is best-effort.**
+  Steps often curl with `|| echo "capture failed"` and upload with `if-no-files-found: ignore`, so a leg can ship a partial set or nothing (service mid-restart, deployment torn down early).
   Recovery: pull the same files from an earlier round of the same PR whose code is identical (confirm the commit delta is docs/workflow-only), or from another leg.
-- **Cross-check point-in-time pprof against a time-series source.** pprof is one idle snapshot; a Prometheus TSDB dump (see the `analyze-prometheus-tsdb` skill) distinguishes "constant offset" from "growth over time".
-  A healthy pairing lands the end-of-run goroutine count exactly on the pprof goroutine total.
-- **A metrics-registration failure can silently break more than metrics.**
-  If registration is one atomic `Register(...)` that only logs on failure, one colliding collector drops *all* custom metrics — which can stall anything downstream that reads them.
-  Grep the pod log for `already exists`/`failed to register` before assuming a flake.
-- **controller-runtime already registers Go + process collectors**, so `go_*`/`process_*` are on `/metrics` already — don't re-register them (panics/collides).
+- Cross-check against a Prometheus TSDB dump (see the `analyze-prometheus-tsdb` skill) to distinguish a constant offset from growth over time.
 - **Histogram bucket choice matters**: a lifetime metric (seconds→hours) needs `ExponentialBuckets`, not `DefBuckets` (which top out at 10s and dump everything into `+Inf`).

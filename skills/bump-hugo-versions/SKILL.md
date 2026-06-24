@@ -5,11 +5,9 @@ description: Use when bumping Hugo, Go, or a theme loaded as a Hugo Module via g
 
 # Bumping Hugo, Go, and Theme Versions
 
-## Overview
-
 Versions are pinned in **three** places that must stay in sync: `go.mod` (Go directive + module require), the deploy config (e.g. `netlify.toml` `[context.*]` blocks **or** `HUGO_VERSION`/`GO_VERSION` env in a GitHub Actions workflow such as `.github/workflows/publish.yml`), and the theme module version itself.
 
-The non-obvious trap: **`go mod tidy` strips the theme `require` lines** because no Go source imports them — Hugo's module system uses `go.mod` but Go's tooling cannot see that.
+The non-obvious trap: **`go mod tidy` strips the theme `require` lines** because no Go source imports them — Hugo resolves modules at build time, but Go's tooling cannot see that.
 Use `hugo mod get` for module updates, not `go get` + `go mod tidy`.
 
 ## Quick Reference
@@ -51,8 +49,7 @@ If the theme records a tested Hugo version (e.g. in a `package.json` `hugo_versi
 gh api "repos/<theme-owner>/<theme-repo>/contents/package.json?ref=v<theme-version>" --jq .content | base64 -d | grep -A1 hugo_version
 ```
 
-Hugo 0.158+ wraps the PostCSS pipeline in Node's experimental Permission Model with a restricted filesystem scope, which breaks browserslist's parent-directory search and hangs or fails `hugo --minify`.
-Themes pin a tested Hugo version for exactly this reason.
+See the `verify-hugo-build` skill for the PostCSS/Node 0.158+ caveat — it is why themes pin a tested Hugo version.
 
 Note: dependency sub-modules move rarely.
 Don't assume they have an update just because the main theme module does.
@@ -64,11 +61,7 @@ hugo mod get <theme-module>@vX.Y.Z
 hugo mod get <theme-deps-module>@vA.B.C   # only if changed and the theme ships one
 ```
 
-**Why not `go mod tidy`:** It scans Go source files for imports.
-There are none for the theme — Hugo resolves modules at build time.
-`tidy` will silently strip both `require` lines, leaving an empty `go.mod` that Hugo then refuses to build against.
 `hugo mod get` writes both `go.mod` and `go.sum` correctly.
-
 If you already ran `go mod tidy` and lost the requires, recover with the same `hugo mod get` calls — they re-add them.
 
 ### 4. Bump the Go directive in go.mod
@@ -115,10 +108,5 @@ If `public/` or `resources/_gen/` show up they are build artifacts — `.gitigno
 | Bumped `HUGO_VERSION` in deploy config but not the `go.mod` `go` directive | Local build uses a different toolchain than CI | Keep them aligned |
 | Used `go get` instead of `hugo mod get` | Works, but does not refresh Hugo's module cache the same way | Prefer `hugo mod get` |
 | Pinned Hugo to non-extended version | SCSS/asset pipeline breaks | Most themes need Hugo **extended** — most deploy images are extended by default |
-
-## Red Flags — Stop
-
-- About to run `go mod tidy` after touching a module require → don't.
-- About to commit only `go.mod` without `go.sum` or vice versa → both update together.
-- `hugo --gc` prints warnings about missing partials after a theme major bump → check the theme CHANGELOG before pushing.
-- Deploy config diff touches only one context → check the others.
+| Committed `go.mod` without `go.sum` (or vice versa) | Build fails on a fresh checkout | They update together — commit both |
+| Missing-partial warnings after a theme major bump | Layout silently broken | Check the theme CHANGELOG before pushing |

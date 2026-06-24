@@ -77,14 +77,14 @@ go mod edit -go=X.Y.Z   # match local `go version` or the deploy config's GO_VER
 
 ### 5. Sync the deploy config
 
-Update **every** `[context.*]` block (e.g. `production`, `split1`, `deploy-preview`, `branch-deploy` in `netlify.toml`):
+Update **every** `[context.*]` block in `netlify.toml` (commonly `production`, `deploy-preview`, `branch-deploy`; a site may define additional custom contexts):
 
 ```toml
 HUGO_VERSION = "<new-hugo-version>"
 GO_VERSION   = "<matches go.mod go directive>"
 ```
 
-Easy to miss: the same pair is often repeated 4× — use a single multi-line edit covering all contexts, not four separate edits.
+Easy to miss: the same pair is repeated in every context — use a single multi-line edit covering all of them, not one edit per context.
 
 ### 6. Verify the build
 

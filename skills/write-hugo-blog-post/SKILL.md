@@ -13,8 +13,8 @@ Byline and reading time are automatic from the layout — never add them by hand
 
 ## File Layout
 
-- **Single file** (text-only): `content/en/blog/my-post-slug.md`
-- **Page bundle** (post with its own images): `content/en/blog/my-post-slug/index.md` plus images next to it, referenced relatively (`![alt](diagram.png)`).
+- **Single file** (text-only): `content/blog/my-post-slug.md` (or `content/<lang>/blog/…` on a multilingual site).
+- **Page bundle** (post with its own images): `content/blog/my-post-slug/index.md` plus images next to it, referenced relatively (`![alt](diagram.png)`).
 - Sitewide images (featured, shared logos) go in `static/images/` and are referenced as `/images/…`.
 
 ## Front Matter
@@ -24,7 +24,7 @@ Byline and reading time are automatic from the layout — never add them by hand
 title = "Your Post Title Here"
 date = "2026-01-15T10:00:00+05:30"
 author = "Full Name"
-categories = ["Tutorials"]
+categories = ["<your-category>"]
 description = "One-sentence summary used in cards, RSS, and OG tags."
 type = "blog"
 images = ["images/featured/my-post-featured.png"]

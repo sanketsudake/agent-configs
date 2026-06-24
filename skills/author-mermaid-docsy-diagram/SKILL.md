@@ -37,6 +37,7 @@ Design choices that keep diagrams narrow:
 | `stateDiagram-v2` | Lifecycles (states and transitions) |
 
 For `sequenceDiagram`: use `autonumber`, keep to ≤4 participants, use short participant names.
+Avoid `classDiagram` in docs — it rarely fits the width rule and is seldom the right tool for documentation flows.
 
 ## Step Numbers on Arrows
 

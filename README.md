@@ -64,8 +64,8 @@ The `Makefile` derives all paths from `$(CURDIR)`, so the repo can live anywhere
 
 ### Skills
 
-Shared by Claude Code and pi — 34 of them, grouped below.
-Most are now authored in this repo (`local`); the rest are vendored from [pi-skills](https://github.com/badlogic/pi-skills) (`brave-search`, `browser-tools`, the Google CLIs, `transcribe`, `vscode`, `youtube-transcript`) and the [cursor-team-kit](https://github.com/cursor/plugins) (`deslop`, `make-pr-easy-to-review`, `pr-review-canvas`, `thermo-nuclear-code-quality-review`).
+Shared by Claude Code and pi — 35 of them, grouped below.
+Most are now authored in this repo (`local`); the rest are vendored from [pi-skills](https://github.com/badlogic/pi-skills) (`brave-search`, the Google CLIs, `transcribe`, `vscode`, `youtube-transcript`), the [cursor-team-kit](https://github.com/cursor/plugins) (`deslop`, `make-pr-easy-to-review`, `pr-review-canvas`, `thermo-nuclear-code-quality-review`), and the [skills.sh](https://www.skills.sh/) ecosystem (`find-skills`, `agent-browser`).
 Each carries a `.source.json` sidecar; run `make skills-list` to see every one's source and status.
 To find more, `make skills-find Q=…` searches [skills.sh](https://www.skills.sh/) and `make skills-add SOURCE=owner/repo@skill` vendors the result into `skills/` (see [Makefile reference](#makefile-reference)).
 
@@ -121,7 +121,7 @@ The owned skills lean heavily toward maintaining a Hugo site and an OSS Go proje
 | Skill | Purpose |
 |-------|---------|
 | `brave-search` | Web search and content extraction via the Brave Search API; no browser needed. |
-| `browser-tools` | Interactive browser automation via the Chrome DevTools Protocol. |
+| `agent-browser` | Browser/Electron automation CLI for agents (CDP, accessibility-tree snapshots); needs `npm i -g agent-browser`. |
 | `youtube-transcript` | Fetch YouTube transcripts for summarization and analysis. |
 | `transcribe` | Local speech-to-text on Apple Silicon macOS. |
 | `vscode` | VS Code integration for viewing diffs and comparing files. |
@@ -139,6 +139,7 @@ The owned skills lean heavily toward maintaining a Hugo site and an OSS Go proje
 | Skill | Purpose |
 |-------|---------|
 | `harvest-automation` | Mine past Claude Code sessions and turn recurring patterns into skills, CLAUDE.md entries, and memory. |
+| `find-skills` | Discover and install skills from the skills.sh ecosystem on request. |
 
 ### Claude commands, agents, rules, scripts
 

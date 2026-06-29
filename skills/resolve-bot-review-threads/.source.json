@@ -1,1 +1,5 @@
-{ "repo": null, "note": "Local skill, maintained in this repo" }
+{
+  "repo": null,
+  "note": "Local skill, maintained in this repo",
+  "category": "pr-review"
+}

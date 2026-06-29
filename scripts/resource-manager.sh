@@ -6,18 +6,20 @@
 # A "skill" is a directory containing SKILL.md, vendored under skills/.
 # An "agent" is a single .md file, vendored under claude/agents/.
 #
-# Each managed resource carries a sidecar recording where it came from:
-#   remote: {"repo","subpath","ref","commit","fetched_at"}
-#   local:  {"repo": null, "note": "..."}
+# Each managed resource carries a sidecar recording where it came from, plus an
+# optional category used to group `list` output:
+#   remote: {"repo","subpath","ref","commit","fetched_at"[,"category"]}
+#   local:  {"repo": null, "note": "..."[, "category"]}
 # A resource with no sidecar is "unmanaged".
 #   skill sidecar: skills/<name>/.source.json        (inside the dir)
 #   agent sidecar: claude/agents/<name>.source.json  (sibling of the .md)
 #
 # Usage:
-#   resource-manager.sh --kind {skill|agent} fetch  (--url URL | --repo REPO --subpath SUBPATH) [--ref REF] [--name NAME] [--force]
+#   resource-manager.sh --kind {skill|agent} fetch  (--url URL | --repo REPO --subpath SUBPATH) [--ref REF] [--name NAME] [--category CAT] [--force]
 #   resource-manager.sh --kind {skill|agent} list
 #   resource-manager.sh --kind {skill|agent} update (--name NAME | --all)
 #   resource-manager.sh --kind {skill|agent} delete --name NAME [--yes]
+#   resource-manager.sh --kind {skill|agent} category --name NAME --category CAT
 #
 set -euo pipefail
 
@@ -170,29 +172,32 @@ sparse_clone() {
   fi
 }
 
-# Write a remote sidecar for <name>.
+# Write a remote sidecar for <name>. A non-empty <category> is recorded; empty
+# is omitted (keeps uncategorized sidecars clean).
 write_sidecar() {
-  local name="$1" repo="$2" subpath="$3" ref="$4" commit="$5"
+  local name="$1" repo="$2" subpath="$3" ref="$4" commit="$5" category="${6:-}"
   local fetched_at; fetched_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   jq -n \
     --arg repo "$repo" --arg subpath "$subpath" --arg ref "$ref" \
-    --arg commit "$commit" --arg fetched_at "$fetched_at" \
-    '{repo:$repo, subpath:$subpath, ref:$ref, commit:$commit, fetched_at:$fetched_at}' \
+    --arg commit "$commit" --arg fetched_at "$fetched_at" --arg category "$category" \
+    '{repo:$repo, subpath:$subpath, ref:$ref, commit:$commit, fetched_at:$fetched_at}
+     + (if $category == "" then {} else {category:$category} end)' \
     > "$(sidecar_path "$name")"
 }
 
 # --- subcommands -----------------------------------------------------------
 
 cmd_fetch() {
-  local url="" repo="" subpath="" ref="" name="" force=0
+  local url="" repo="" subpath="" ref="" name="" category="" force=0
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --url)     url="$2"; shift 2 ;;
-      --repo)    repo="$2"; shift 2 ;;
-      --subpath) subpath="$2"; shift 2 ;;
-      --ref)     ref="$2"; shift 2 ;;
-      --name)    name="$2"; shift 2 ;;
-      --force)   force=1; shift ;;
+      --url)      url="$2"; shift 2 ;;
+      --repo)     repo="$2"; shift 2 ;;
+      --subpath)  subpath="$2"; shift 2 ;;
+      --ref)      ref="$2"; shift 2 ;;
+      --name)     name="$2"; shift 2 ;;
+      --category) category="$2"; shift 2 ;;
+      --force)    force=1; shift ;;
       *) die "fetch: unknown argument '$1'" ;;
     esac
   done
@@ -228,31 +233,47 @@ cmd_fetch() {
     || die "$subpath in $repo is not a valid $KIND"
 
   copy_artifact "$tmp/repo/$subpath" "$dest"
-  write_sidecar "$name" "$repo" "$subpath" "$ref" "$commit"
-  info "fetched $(rel "$dest") @ ${commit:0:7}"
+  write_sidecar "$name" "$repo" "$subpath" "$ref" "$commit" "$category"
+  info "fetched $(rel "$dest") @ ${commit:0:7}${category:+ [$category]}"
 }
 
+# List resources grouped by category. Each row's category comes from its
+# sidecar's `.category` (uncategorized if absent); rows are bucketed under a
+# `<category> (<count>)` header with an aligned table.
 cmd_list() {
-  local rows=$'NAME\tSTATUS\tREPO\tSUBPATH\tREF\tCOMMIT\tFETCHED_AT'
-  local name sidecar repo subpath ref commit fetched
+  local data="" name sidecar repo subpath ref commit fetched category status
   while IFS=$'\t' read -r name sidecar; do
     [[ -n "$name" ]] || continue
+    repo=-; subpath=-; ref=-; commit=-; fetched=-
     if [[ ! -f "$sidecar" ]]; then
-      rows+=$'\n'"$name"$'\tunmanaged\t-\t-\t-\t-\t-'
-      continue
+      status=unmanaged; category=uncategorized
+    else
+      category="$(jq -r '.category // "uncategorized"' "$sidecar")"
+      repo="$(jq -r '.repo // empty' "$sidecar")"
+      if [[ -z "$repo" ]]; then
+        status=local; repo=-
+      else
+        status=remote
+        subpath="$(jq -r '.subpath // "-"' "$sidecar")"
+        ref="$(jq -r '.ref // "-"' "$sidecar")"
+        commit="$(jq -r '.commit // "-"' "$sidecar")"; commit="${commit:0:7}"
+        fetched="$(jq -r '.fetched_at // "-"' "$sidecar")"
+      fi
     fi
-    repo="$(jq -r '.repo // empty' "$sidecar")"
-    if [[ -z "$repo" ]]; then
-      rows+=$'\n'"$name"$'\tlocal\t-\t-\t-\t-\t-'
-      continue
-    fi
-    subpath="$(jq -r '.subpath // "-"' "$sidecar")"
-    ref="$(jq -r '.ref // "-"' "$sidecar")"
-    commit="$(jq -r '.commit // "-"' "$sidecar")"
-    fetched="$(jq -r '.fetched_at // "-"' "$sidecar")"
-    rows+=$'\n'"$name"$'\tremote\t'"$repo"$'\t'"$subpath"$'\t'"$ref"$'\t'"${commit:0:7}"$'\t'"$fetched"
+    data+="$category"$'\t'"$name"$'\t'"$status"$'\t'"$repo"$'\t'"$subpath"$'\t'"$ref"$'\t'"$commit"$'\t'"$fetched"$'\n'
   done < <(iter_resources)
-  printf '%s\n' "$rows" | column -t -s $'\t'
+
+  [[ -n "$data" ]] || { info "no ${KIND}s found"; return 0; }
+
+  local cat count
+  while IFS= read -r cat; do
+    [[ -n "$cat" ]] || continue
+    count="$(printf '%s' "$data" | awk -F'\t' -v c="$cat" '$1==c' | grep -c .)"
+    printf '\n%s (%s)\n' "$cat" "$count"
+    { printf 'NAME\tSTATUS\tREPO\tSUBPATH\tREF\tCOMMIT\tFETCHED_AT\n'
+      printf '%s' "$data" | awk -F'\t' -v c="$cat" '$1==c {print $2"\t"$3"\t"$4"\t"$5"\t"$6"\t"$7"\t"$8}'
+    } | column -t -s $'\t'
+  done < <(printf '%s' "$data" | cut -f1 | sort -u)
 }
 
 # Re-fetch one remote resource in place. Reports via stderr.
@@ -271,10 +292,11 @@ update_one() {
     info "$name: local $KIND, nothing to update"
     return 0
   fi
-  local subpath ref old_commit
+  local subpath ref old_commit category
   subpath="$(jq -r '.subpath' "$sidecar")"
   ref="$(jq -r '.ref' "$sidecar")"
   old_commit="$(jq -r '.commit' "$sidecar")"
+  category="$(jq -r '.category // ""' "$sidecar")"   # preserve across re-fetch
 
   local tmp; mktmp; tmp="$MKTMP_DIR"
   sparse_clone "$repo" "$ref" "$(sparse_set_path "$subpath")" "$tmp/repo"
@@ -288,7 +310,7 @@ update_one() {
     || { err "$name: subpath $subpath is no longer a valid $KIND upstream, skipping"; return 1; }
 
   copy_artifact "$tmp/repo/$subpath" "$artifact"
-  write_sidecar "$name" "$repo" "$subpath" "$ref" "$new_commit"
+  write_sidecar "$name" "$repo" "$subpath" "$ref" "$new_commit" "$category"
   info "$name: updated ${old_commit:0:7} -> ${new_commit:0:7}"
 }
 
@@ -342,6 +364,32 @@ cmd_delete() {
   info "deleted $(rel "$artifact")"
 }
 
+# Set/replace the category on an existing resource's sidecar (in place, so it
+# survives update). Creates a minimal local sidecar if none exists yet.
+cmd_category() {
+  local name="" category=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --name)     name="$2"; shift 2 ;;
+      --category) category="$2"; shift 2 ;;
+      *) die "category: unknown argument '$1'" ;;
+    esac
+  done
+  [[ -n "$name"     ]] || die "category: --name NAME is required"
+  [[ -n "$category" ]] || die "category: --category CAT is required"
+  local artifact sidecar
+  artifact="$(artifact_path "$name")"
+  sidecar="$(sidecar_path "$name")"
+  [[ -e "$artifact" ]] || die "$name: no such $KIND"
+  if [[ -f "$sidecar" ]]; then
+    local tmp; tmp="$(mktemp)"
+    jq --arg c "$category" '.category = $c' "$sidecar" > "$tmp" && mv "$tmp" "$sidecar"
+  else
+    jq -n --arg c "$category" '{repo:null, category:$c}' > "$sidecar"
+  fi
+  info "$name: category set to '$category'"
+}
+
 # --- dispatch --------------------------------------------------------------
 
 [[ $# -ge 2 && "$1" == "--kind" ]] \
@@ -352,9 +400,10 @@ configure_kind
 [[ $# -ge 1 ]] || die "missing command (expected fetch|list|update|delete)"
 cmd="$1"; shift
 case "$cmd" in
-  fetch)  cmd_fetch  "$@" ;;
-  list)   cmd_list   "$@" ;;
-  update) cmd_update "$@" ;;
-  delete) cmd_delete "$@" ;;
-  *) die "unknown command '$cmd' (expected fetch|list|update|delete)" ;;
+  fetch)    cmd_fetch    "$@" ;;
+  list)     cmd_list     "$@" ;;
+  update)   cmd_update   "$@" ;;
+  delete)   cmd_delete   "$@" ;;
+  category) cmd_category "$@" ;;
+  *) die "unknown command '$cmd' (expected fetch|list|update|delete|category)" ;;
 esac

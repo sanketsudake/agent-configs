@@ -45,8 +45,8 @@ SHELL := /bin/bash
 	agents-link agents-unlink \
 	skills-sync extensions-sync plugins-check plugins-sync \
 	skills-find skills-add \
-	skills-fetch skills-list skills-update skills-update-all skills-delete \
-	agents-fetch agents-list agents-update agents-update-all agents-delete
+	skills-fetch skills-list skills-update skills-update-all skills-category skills-delete \
+	agents-fetch agents-list agents-update agents-update-all agents-category agents-delete
 
 install: skills-link claude-md-link commands-link rules-link scripts-link agents-link
 	mkdir -p $(PI_TARGET)
@@ -289,6 +289,7 @@ skills-add:
 		$(if $(SKILL),--skill "$(SKILL)") \
 		$(if $(ALL),--all) \
 		$(if $(REF),--ref "$(REF)") \
+		$(if $(CATEGORY),--category "$(CATEGORY)") \
 		$(if $(FORCE),--force)
 
 # --- Source management (scripts/resource-manager.sh) -----------------------
@@ -303,6 +304,7 @@ skills-fetch:
 		$(if $(SUBPATH),--subpath "$(SUBPATH)") \
 		$(if $(REF),--ref "$(REF)") \
 		$(if $(NAME),--name "$(NAME)") \
+		$(if $(CATEGORY),--category "$(CATEGORY)") \
 		$(if $(FORCE),--force)
 
 skills-list:
@@ -314,6 +316,10 @@ skills-update:
 skills-update-all:
 	@$(RESOURCE_MANAGER) --kind skill update --all
 
+skills-category:
+	@test -n "$(NAME)" -a -n "$(CATEGORY)" || { echo "usage: make skills-category NAME=<skill> CATEGORY=<category>"; exit 1; }
+	@$(RESOURCE_MANAGER) --kind skill category --name "$(NAME)" --category "$(CATEGORY)"
+
 skills-delete:
 	@$(RESOURCE_MANAGER) --kind skill delete --name "$(NAME)" $(if $(YES),--yes)
 
@@ -324,6 +330,7 @@ agents-fetch:
 		$(if $(SUBPATH),--subpath "$(SUBPATH)") \
 		$(if $(REF),--ref "$(REF)") \
 		$(if $(NAME),--name "$(NAME)") \
+		$(if $(CATEGORY),--category "$(CATEGORY)") \
 		$(if $(FORCE),--force)
 
 agents-list:
@@ -334,6 +341,10 @@ agents-update:
 
 agents-update-all:
 	@$(RESOURCE_MANAGER) --kind agent update --all
+
+agents-category:
+	@test -n "$(NAME)" -a -n "$(CATEGORY)" || { echo "usage: make agents-category NAME=<agent> CATEGORY=<category>"; exit 1; }
+	@$(RESOURCE_MANAGER) --kind agent category --name "$(NAME)" --category "$(CATEGORY)"
 
 agents-delete:
 	@$(RESOURCE_MANAGER) --kind agent delete --name "$(NAME)" $(if $(YES),--yes)

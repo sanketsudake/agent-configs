@@ -14,7 +14,7 @@
 # the CLI does not handle, working exactly as before.
 #
 # Usage:
-#   skills-vendor.sh --source <owner/repo[@skill] | url> [--skill "a b c" | --all] [--ref REF] [--force]
+#   skills-vendor.sh --source <owner/repo[@skill] | url> [--skill "a b c" | --all] [--ref REF] [--category CAT] [--force]
 #
 # Network: the CLI and git both hit GitHub. Export GITHUB_TOKEN (or have `gh`
 # logged in) to avoid anonymous rate limits.
@@ -31,14 +31,15 @@ command -v jq  >/dev/null || die "jq is required"
 command -v npx >/dev/null || die "npx (Node.js) is required to run the skills CLI"
 [[ -x "$RESOURCE_MANAGER" ]] || die "resource-manager.sh not found at $RESOURCE_MANAGER"
 
-source="" skills_arg="" all=0 ref="" force=0
+source="" skills_arg="" all=0 ref="" category="" force=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --source) source="$2"; shift 2 ;;
-    --skill)  skills_arg="$2"; shift 2 ;;
-    --all)    all=1; shift ;;
-    --ref)    ref="$2"; shift 2 ;;
-    --force)  force=1; shift ;;
+    --source)   source="$2"; shift 2 ;;
+    --skill)    skills_arg="$2"; shift 2 ;;
+    --all)      all=1; shift ;;
+    --ref)      ref="$2"; shift 2 ;;
+    --category) category="$2"; shift 2 ;;
+    --force)    force=1; shift ;;
     *) die "unknown argument '$1'" ;;
   esac
 done
@@ -94,7 +95,8 @@ for entry in "${entries[@]}"; do
   fi
   subpath="$(dirname "$skillpath")"   # skills/<name>/SKILL.md -> skills/<name>
   rm_args=(--kind skill fetch --repo "$src" --subpath "$subpath" --name "$name")
-  [[ -n "$ref"     ]] && rm_args+=(--ref "$ref")
+  [[ -n "$ref"      ]] && rm_args+=(--ref "$ref")
+  [[ -n "$category" ]] && rm_args+=(--category "$category")
   [[ "$force" -eq 1 ]] && rm_args+=(--force)
   info "==> vendoring $name  ($src : $subpath)"
   if "$RESOURCE_MANAGER" "${rm_args[@]}"; then

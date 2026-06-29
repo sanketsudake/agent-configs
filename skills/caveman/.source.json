@@ -3,5 +3,6 @@
   "subpath": "skills/caveman",
   "ref": "main",
   "commit": "25d22f864ad68cc447a4cb93aefde918aa4aec9f",
-  "fetched_at": "2026-06-29T08:53:52Z"
+  "fetched_at": "2026-06-29T08:53:52Z",
+  "category": "meta"
 }

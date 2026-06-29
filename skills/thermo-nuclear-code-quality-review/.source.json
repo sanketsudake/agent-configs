@@ -3,5 +3,6 @@
   "subpath": "cursor-team-kit/skills/thermo-nuclear-code-quality-review",
   "ref": "main",
   "commit": "e46364b8be46000b7df0f260550cd712afbb8d36",
-  "fetched_at": "2026-06-20T03:26:41Z"
+  "fetched_at": "2026-06-20T03:26:41Z",
+  "category": "pr-review"
 }

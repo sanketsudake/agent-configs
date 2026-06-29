@@ -66,8 +66,8 @@ The `Makefile` derives all paths from `$(CURDIR)`, so the repo can live anywhere
 
 Shared by Claude Code and pi — 36 of them, grouped below.
 Most are now authored in this repo (`local`); the rest are vendored from [pi-skills](https://github.com/badlogic/pi-skills) (`brave-search`, the Google CLIs, `transcribe`, `vscode`, `youtube-transcript`), the [cursor-team-kit](https://github.com/cursor/plugins) (`deslop`, `make-pr-easy-to-review`, `pr-review-canvas`, `thermo-nuclear-code-quality-review`), and the [skills.sh](https://www.skills.sh/) ecosystem (`find-skills`, `agent-browser`, `caveman`).
-Each carries a `.source.json` sidecar; run `make skills-list` to see every one's source and status.
-To find more, `make skills-find Q=…` searches [skills.sh](https://www.skills.sh/) and `make skills-add SOURCE=owner/repo@skill` vendors the result into `skills/` (see [Makefile reference](#makefile-reference)).
+Each carries a `.source.json` sidecar recording its source and a `category`; `make skills-list` prints them grouped by that category (the same domains as the tables below — Claude Code/pi only scan one level deep, so categorization is metadata, not nested folders).
+To find more, `make skills-find Q=…` searches [skills.sh](https://www.skills.sh/) and `make skills-add SOURCE=owner/repo@skill CATEGORY=…` vendors the result into `skills/` (see [Makefile reference](#makefile-reference)).
 
 The owned skills lean heavily toward maintaining a Hugo site and an OSS Go project end-to-end — authoring, CI triage, dependency hygiene, security remediation, and backlog/PR review — each one atomic so it can run alone or chain with the others.
 
@@ -217,11 +217,12 @@ All targets follow `<resource>-<action>`; `install` / `uninstall` are the aggreg
 | `skills-sync` | Bulk-vendor the [pi-skills](https://github.com/badlogic/pi-skills) set into `skills/`. |
 | `extensions-sync` | Vendor the whitelisted pi-mono extensions into `pi/extensions/`. |
 | `skills-find [Q=… OWNER=…]` | Discover skills on [skills.sh](https://www.skills.sh/) via the `skills` CLI; prints `owner/repo@skill` hits. |
-| `skills-add SOURCE=… [SKILL=…]` | Fetch from skills.sh/GitHub via the `skills` CLI and vendor into `skills/` with a `.source.json`. |
-| `skills-fetch REPO=… SUBPATH=…` | Fetch one skill from any repo/subpath and write its `.source.json`. |
+| `skills-add SOURCE=… [SKILL=… CATEGORY=…]` | Fetch from skills.sh/GitHub via the `skills` CLI and vendor into `skills/` with a `.source.json` (optionally tagged `CATEGORY=`). |
+| `skills-fetch REPO=… SUBPATH=… [CATEGORY=…]` | Fetch one skill from any repo/subpath and write its `.source.json`. |
 | `agents-fetch REPO=… SUBPATH=…` | Same, for a single agent `.md` file. |
-| `skills-list` / `agents-list` | Table of every resource with status (`remote`/`local`/`unmanaged`) and source. |
-| `skills-update NAME=…` / `-update-all` | Re-resolve the recorded ref and re-copy if upstream moved. |
+| `skills-list` / `agents-list` | Every resource with status (`remote`/`local`/`unmanaged`) and source, **grouped by category**. |
+| `skills-category NAME=… CATEGORY=…` | Set/replace a resource's category (survives `skills-update`). |
+| `skills-update NAME=…` / `-update-all` | Re-resolve the recorded ref and re-copy if upstream moved (category preserved). |
 | `skills-delete NAME=…` | Remove a resource and its sidecar. |
 | `plugins-check` | Diff `plugins.txt` against each profile's installed plugins. |
 | `plugins-sync` | Emit the exact `/plugin install` lines to close the drift. |

@@ -47,6 +47,9 @@ Each managed resource carries a `.source.json` sidecar:
 - **remote** — `{"repo","subpath","ref","commit","fetched_at"}`, where `commit` is the resolved SHA of `ref` at fetch time.
 - **local** — `{"repo": null, ...}` for resources authored in this repo (e.g. the `harvest-automation` skill); `update` and `delete` treat them as having no upstream.
 - A resource with no `.source.json` is reported as `unmanaged`.
+- An optional `category` field (any of the above shapes may carry it) groups the resource in `list` output.
+  It's our metadata, not the upstream's, so `update` reads and re-writes it to survive a re-fetch.
+  This is how skills are categorized: Claude Code and pi scan `skills/` only one level deep, so nesting skills into category subfolders would hide them — the category lives in the sidecar instead.
 
 Targets (each `skills-*` has an `agents-*` twin taking the same variables):
 
@@ -55,8 +58,11 @@ Targets (each `skills-*` has an `agents-*` twin taking the same variables):
   A full GitHub URL also works: `URL='https://github.com/owner/name/tree/<ref>/<subpath>'`.
 - `make agents-fetch REPO=owner/name SUBPATH=path/to/agent.md [REF=main] [NAME=…] [FORCE=1]` — same, but the subpath is a `.md` file (NAME defaults to its basename minus `.md`), copied into `claude/agents/<NAME>.md`.
   Accepts a `/blob/` URL too.
-- `make skills-list` / `make agents-list` — table of every resource with its status (`remote`/`local`/`unmanaged`) and source.
-- `make skills-update NAME=…` / `make agents-update NAME=…` — re-resolve the recorded `ref`; if the upstream commit moved, re-copy and rewrite the sidecar (prints `old→new`), else report up to date.
+  `fetch` also takes an optional `CATEGORY=…` to tag the sidecar on the way in.
+- `make skills-list` / `make agents-list` — every resource with its status (`remote`/`local`/`unmanaged`) and source, grouped under a `<category> (<count>)` header (uncategorized last-ish, sorted).
+- `make skills-category NAME=… CATEGORY=…` / `make agents-category NAME=… CATEGORY=…` — set/replace a resource's category in place (creates a minimal local sidecar if none exists).
+  Use kebab-case slugs that match the README's domain groups.
+- `make skills-update NAME=…` / `make agents-update NAME=…` — re-resolve the recorded `ref`; if the upstream commit moved, re-copy and rewrite the sidecar (prints `old→new`, preserving `category`), else report up to date.
   Skips `local` and `unmanaged`.
 - `make skills-update-all` / `make agents-update-all` — update every remote resource of that kind.
 - `make skills-delete NAME=… [YES=1]` / `make agents-delete NAME=… [YES=1]` — remove the resource (for agents, both the `.md` and its sidecar); prompts unless `YES=1`.
@@ -69,8 +75,9 @@ Note: the make variable is `SUBPATH`, not `PATH` — `PATH=` on a make command l
 Requires `npx` (Node.js) and `jq`; it also relies on `resource-manager.sh`.
 
 - `make skills-find [Q=query] [OWNER=org]` — `npx skills find`; prints ranked skills.sh hits as `owner/repo@skill`.
-- `make skills-add SOURCE=owner/repo [SKILL='a b'] [ALL=1] [REF=…] [FORCE=1]` — fetch + vendor.
+- `make skills-add SOURCE=owner/repo [SKILL='a b'] [ALL=1] [REF=…] [CATEGORY=…] [FORCE=1]` — fetch + vendor.
   `SOURCE` accepts the `owner/repo@skill` form `skills-find` prints (paste it verbatim); the `@skill` suffix is peeled into a selected skill.
+  `CATEGORY=` tags every skill fetched in the call (it flows through to `resource-manager.sh`'s sidecar).
 
 The integration is deliberately **hybrid**, not a replacement for `resource-manager.sh`.
 `skills-vendor.sh` uses the CLI only as a *resolver/fetcher*: it runs `skills add … --copy` into a throwaway staging dir, reads the CLI's project `skills-lock.json` (per skill: `source`, `sourceType`, `skillPath`), then re-vendors each through `resource-manager.sh fetch`.

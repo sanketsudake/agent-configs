@@ -423,10 +423,12 @@ def sync_documents(args, state, raw_dir, ingested, today, results, log):
         try:
             content = get_document_content(doc_id)
         except SyncError as exc:
-            # Skip this doc; the withheld cursor re-covers it next run.
+            # Some records fail details permanently server-side. Write a
+            # metadata stub instead of blocking the cursor: if content ever
+            # becomes fetchable, the hash change surfaces it as UPDATED.
             doc_failures.append(doc_id)
-            log(f"  doc {doc_id} ({meta.get('title')}) failed, skipping: {exc}")
-            continue
+            log(f"  doc {doc_id} ({meta.get('title')}) details failed, writing stub: {exc}")
+            content = ""
         created = entry.get("created") or today
         updated = today if entry else None
         rendered = render_document(meta, content, created, updated)
@@ -443,9 +445,9 @@ def sync_documents(args, state, raw_dir, ingested, today, results, log):
                 "content_hash": new_hash,
             }
     if doc_failures:
-        raise SyncError(
-            f"{len(doc_failures)} doc(s) failed and were skipped: "
-            f"{', '.join(doc_failures)} — cursors not advanced, next run retries them"
+        log(
+            f"WARNING: {len(doc_failures)} doc(s) written as metadata stubs "
+            f"(details unfetchable): {', '.join(doc_failures)}"
         )
     if not args.dry_run and not args.limit:
         for loc in locations:

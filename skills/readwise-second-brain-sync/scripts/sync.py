@@ -37,6 +37,10 @@ HL_FIELDS = (
     "text,note,tags,highlighted_at,updated,url,color,book_id,"
     "book_title,book_author,book_category,book_source_url"
 )
+# Per-book fetches must NOT request book_* fields: resolving book details can
+# fail server-side for some sources (e.g. tweet threads with broken book
+# records), and the digest's book metadata comes from the stream listing anyway.
+HL_BASE_FIELDS = "text,note,tags,highlighted_at,updated,url,color,book_id"
 STATE_VERSION = 1
 
 
@@ -114,16 +118,21 @@ def list_highlights(cursor, log):
 
 
 def book_highlights(book_id):
-    """Fetch ALL highlights for one book (for whole-digest regeneration)."""
+    """Fetch ALL highlights for one book (for whole-digest regeneration).
+
+    Extra retries + throttle: the highlights endpoint intermittently errors
+    under rapid successive per-book calls.
+    """
     out, page = [], 1
+    time.sleep(0.3)
     while True:
         data = run_cli([
             "readwise-list-highlights",
             "--book-id", str(book_id),
             "--page-size", "100",
             "--page", str(page),
-            "--response-fields", HL_FIELDS,
-        ])
+            "--response-fields", HL_BASE_FIELDS,
+        ], retries=3, backoff=10)
         results = data.get("results") or []
         out.extend(results)
         if len(results) < 100:
@@ -423,8 +432,14 @@ def sync_highlights(args, state, raw_dir, ingested, today, results, log):
             continue
         bid = str(bid)
         if bid not in changed:
+            # Fall back to the highlight's own URL host when the book record
+            # has no title (seen with tweet-thread sources).
+            title = h.get("book_title")
+            if not title and h.get("url"):
+                host = re.sub(r"^https?://(www\.)?", "", h["url"]).split("/")[0]
+                title = f"Highlights from {host} ({bid})"
             changed[bid] = {
-                "title": h.get("book_title") or f"Book {bid}",
+                "title": title or f"Book {bid}",
                 "author": h.get("book_author") or "",
                 "category": h.get("book_category") or "",
                 "source_url": h.get("book_source_url") or "",
@@ -433,8 +448,15 @@ def sync_highlights(args, state, raw_dir, ingested, today, results, log):
     if args.limit:
         books = books[: args.limit]
     log(f"Highlights: {len(books)} source(s) with new/changed highlights")
+    book_failures = []
     for bid, book in books:
-        hls = book_highlights(bid)
+        try:
+            hls = book_highlights(bid)
+        except SyncError as exc:
+            # Skip this book, keep going; the withheld cursor re-covers it next run.
+            book_failures.append(bid)
+            log(f"  book {bid} ({book['title']}) failed, skipping: {exc}")
+            continue
         if not hls:
             continue
         entry = state["highlight_books"].get(bid, {})
@@ -457,6 +479,11 @@ def sync_highlights(args, state, raw_dir, ingested, today, results, log):
                 "highlight_count": len(hls),
                 "content_hash": new_hash,
             }
+    if book_failures:
+        raise SyncError(
+            f"{len(book_failures)} book(s) failed and were skipped: "
+            f"{', '.join(book_failures)} — cursor not advanced, next run retries them"
+        )
     if not args.dry_run and not args.limit:
         state["cursors"]["highlights"] = max_ts
 

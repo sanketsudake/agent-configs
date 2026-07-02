@@ -115,6 +115,7 @@ Each entry in `wiki/index.md` is one line:
 Organized under category headers: Sources, Entities, Concepts, Synthesis.
 
 `index.md` stays a single flat file; shard into per-category files only if the Sources section passes ~150 entries or the file passes ~500 lines.
+When sharded, the moved section lives in a sibling catalog (e.g. `wiki/index-sources.md`) and `index.md` keeps a one-line pointer to it; ingest then updates the sharded file.
 
 ## Log Format
 

@@ -7,3 +7,4 @@ docs/superpowers/
 # docs call this an "ignored" dir; under the symlinked Claude profiles it
 # resolves into the repo tree, so ignore it to keep the blob out of git.
 skills/bin/
+__pycache__/

@@ -228,6 +228,23 @@ Tell the user what was done:
 - New entities and concepts identified
 - Any contradictions found with existing content
 
+## Process Local Highlights (==marks== made while reading in the vault)
+
+Trigger: the user says "process my highlights", "I highlighted some things", or a batch run finds marked files.
+These are `==highlight==` marks the user added while reading raw files in Obsidian — the one permitted human edit to `raw/`.
+
+1. Find candidates: `grep -lE '==[^=]' raw/*.md`.
+   Skip matches that sit inside code fences — `==` also appears in code.
+2. For each candidate, extract every `==...==` span and diff against the source page's existing `## Highlights` bullets.
+3. Append only the missing spans, verbatim, as bullets (create the section above `## Upgrade Notes` if absent); bump `updated:`.
+4. A source that gains local highlights becomes a **deep candidate**, same as one arriving with Readwise highlights.
+5. Log once per pass, without `Processed:` lines (the files are already ingested):
+
+```
+## [YYYY-MM-DD] highlights | N passages from M sources
+Updated: [[Page One]] (+2), [[Page Two]] (+1). Deep candidates: [[Page One]].
+```
+
 ## Deepen (upgrade a light page)
 
 Trigger: the user asks (`deepen <page or raw file>`), or accepts a deep-candidate suggestion from a batch report or lint pass.
@@ -263,6 +280,7 @@ Do NOT add another `Processed:` backticked-filename line — the file is already
 
 After ingesting sources, the user can:
 - **Ask questions** with `/second-brain-query` to explore what was ingested
+- **Read in the vault** and mark passages with `==highlight==` — then "process my highlights" lifts them into the wiki
 - **Deepen** high-value light pages — the batch report and lint rank candidates
 - **Ingest more sources** — clip or sync another source and run `/second-brain-ingest` again
 - **Health-check** with `/second-brain-lint` — quick-lint runs automatically after each batch; run a full lint monthly

@@ -163,6 +163,19 @@ Handle them as follows:
 3. **During ingestion**, note any images in the source.
    If an image contains important information (diagrams, charts, data), describe its contents in the wiki page so the knowledge is captured in text form.
 
+## Local Highlights (reading in the vault)
+
+Reading can happen directly in the vault: open a raw file in Obsidian and mark passages with `==highlight==` syntax while reading.
+These marks are the human's, made in place; the LLM never adds or edits them.
+
+The **process-highlights** operation lifts them into the wiki:
+
+1. Find candidate files: `grep -lE '==[^=]' raw/*.md` (ignore matches inside code fences — `==` also appears in code).
+2. For each candidate, extract every `==...==` span and compare against its source page's `## Highlights` bullets.
+3. Append the missing ones verbatim as bullets (create the section above `## Upgrade Notes` if absent), bump `updated:`.
+4. A source that gains local highlights becomes a deep candidate, same as one with Readwise highlights.
+5. Log once per pass: `## [YYYY-MM-DD] highlights | N passages from M sources` (no `Processed:` lines — the files are already ingested).
+
 ## Lint Frequency
 
 Run lint (`/second-brain-lint`) in two modes:
@@ -185,6 +198,7 @@ You have access to these CLI tools — use them when appropriate:
 
 1. Never modify files in `raw/`.
    They are immutable source material.
+   Sole exception: the human may add `==highlight==` marks while reading a raw file in the vault — see Local Highlights.
 2. Always update `wiki/index.md` when you create or delete a page.
 3. Always append to `wiki/log.md` when you perform an operation.
 4. Use `[[wikilinks]]` for all internal references.

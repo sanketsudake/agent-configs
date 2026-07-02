@@ -87,6 +87,15 @@ The tables below are **generated** from the sidecars + each `SKILL.md` descripti
 | [`improve-codecov-coverage`](skills/improve-codecov-coverage/SKILL.md) | Use when raising test coverage on a Go project that reports to Codecov (triggers "improve code coverage", "cover package X", "find coverage gaps"). |
 | [`watch-ci`](skills/watch-ci/SKILL.md) | After pushing to a PR, watch its CI checks to terminal state and surface each transition as a notification instead of busy-polling. |
 
+**documents (4)**
+
+| Skill | Purpose |
+|-------|---------|
+| [`docx`](skills/docx/SKILL.md) | Use this skill whenever the user wants to create, read, edit, or manipulate Word documents (.docx files). |
+| [`pdf`](skills/pdf/SKILL.md) | Use this skill whenever the user wants to do anything with PDF files. |
+| [`pptx`](skills/pptx/SKILL.md) | Use this skill any time a .pptx file is involved in any way — as input, output, or both. |
+| [`xlsx`](skills/xlsx/SKILL.md) | Use this skill any time a spreadsheet file is the primary input or output. |
+
 **gh-security (4)**
 
 | Skill | Purpose |

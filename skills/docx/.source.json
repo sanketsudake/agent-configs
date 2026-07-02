@@ -1,0 +1,8 @@
+{
+  "repo": "https://github.com/anthropics/skills",
+  "subpath": "skills/docx",
+  "ref": "main",
+  "commit": "9d2f1ae187231d8199c64b5b762e1bdf2244733d",
+  "fetched_at": "2026-07-02T18:37:27Z",
+  "category": "documents"
+}

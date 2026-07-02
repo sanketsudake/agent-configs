@@ -66,9 +66,10 @@ Targets (each `skills-*` has an `agents-*` twin taking the same variables):
   Skips `local` and `unmanaged`.
 - `make skills-update-all` / `make agents-update-all` — update every remote resource of that kind.
 - `make skills-delete NAME=… [YES=1]` / `make agents-delete NAME=… [YES=1]` — remove the resource (for agents, both the `.md` and its sidecar); prompts unless `YES=1`.
-- `make skills-catalog [CHECK=1]` — regenerate the category-grouped skill tables in `README.md` between the `<!-- BEGIN/END skills-catalog -->` markers, from each sidecar's `category` + each `SKILL.md`'s frontmatter `description` (first sentence, truncated).
+- `make skills-catalog [CHECK=1]` — regenerate the standalone catalog at `skills/README.md` (category-grouped tables) from each sidecar's `category` + each `SKILL.md`'s frontmatter `description` (first sentence, truncated).
+  The main `README.md` just links to it.
   Run it after adding, removing, or recategorizing a skill; `CHECK=1` only verifies (exit 1 if stale).
-- `make skills-doctor` / `make agents-doctor` — validate every resource: markdown present, non-empty frontmatter `name`/`description`, sidecar present with a `category`; for skills, also that the README catalog block is current.
+- `make skills-doctor` / `make agents-doctor` — validate every resource: markdown present, non-empty frontmatter `name`/`description`, sidecar present with a `category`; for skills, also that `skills/README.md` is current.
   Exit 1 on any issue.
 
 Note: the make variable is `SUBPATH`, not `PATH` — `PATH=` on a make command line would clobber the shell `PATH` inside recipes and break `git`/`jq`.

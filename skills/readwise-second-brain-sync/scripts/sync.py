@@ -82,7 +82,8 @@ def list_documents(location, cursor, log):
             args += ["--updated-after", cursor]
         if page_cursor:
             args += ["--page-cursor", page_cursor]
-        data = run_cli(args)
+        # The Reader endpoints error intermittently; be patient on listings.
+        data = run_cli(args, retries=3, backoff=10)
         results = data.get("results") or []
         yield from results
         page_cursor = data.get("nextPageCursor")
@@ -92,7 +93,10 @@ def list_documents(location, cursor, log):
 
 
 def get_document_content(doc_id):
-    data = run_cli(["reader-get-document-details", "--document-id", doc_id])
+    data = run_cli(
+        ["reader-get-document-details", "--document-id", doc_id],
+        retries=3, backoff=10,
+    )
     return data.get("content") or ""
 
 
@@ -407,6 +411,7 @@ def sync_documents(args, state, raw_dir, ingested, today, results, log):
         docs.extend(loc_docs)
     if args.limit:
         docs = docs[: args.limit]
+    doc_failures = []
     for meta in docs:
         doc_id = meta["id"]
         entry = state["documents"].get(doc_id, {})
@@ -415,7 +420,13 @@ def sync_documents(args, state, raw_dir, ingested, today, results, log):
             raw_dir, state["documents"], doc_id,
             f"{slugify(meta.get('title'))}-{doc_id[:8]}.md",
         )
-        content = get_document_content(doc_id)
+        try:
+            content = get_document_content(doc_id)
+        except SyncError as exc:
+            # Skip this doc; the withheld cursor re-covers it next run.
+            doc_failures.append(doc_id)
+            log(f"  doc {doc_id} ({meta.get('title')}) failed, skipping: {exc}")
+            continue
         created = entry.get("created") or today
         updated = today if entry else None
         rendered = render_document(meta, content, created, updated)
@@ -431,6 +442,11 @@ def sync_documents(args, state, raw_dir, ingested, today, results, log):
                 "updated_at": ts,
                 "content_hash": new_hash,
             }
+    if doc_failures:
+        raise SyncError(
+            f"{len(doc_failures)} doc(s) failed and were skipped: "
+            f"{', '.join(doc_failures)} — cursors not advanced, next run retries them"
+        )
     if not args.dry_run and not args.limit:
         for loc in locations:
             cursors[loc] = max_ts.get(loc)

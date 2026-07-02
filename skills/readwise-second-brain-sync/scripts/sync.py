@@ -377,22 +377,40 @@ def write_file(raw_dir, fname, rendered, results, ingested, today, state, dry):
     return new_hash
 
 
+def doc_cursors(state):
+    """Per-location cursors; migrate a legacy single-string cursor in place.
+
+    Per-location matters: a location first synced later (e.g. inbox via
+    --include-inbox) must get a FULL first fetch, not inherit the cursor
+    another location already advanced.
+    """
+    cur = state["cursors"]["reader_docs"]
+    if cur is None or isinstance(cur, str):
+        cur = {loc: cur for loc in DOC_LOCATIONS}
+        state["cursors"]["reader_docs"] = cur
+    return cur
+
+
 def sync_documents(args, state, raw_dir, ingested, today, results, log):
-    cursor = None if args.full else state["cursors"]["reader_docs"]
+    cursors = doc_cursors(state)
     locations = list(DOC_LOCATIONS) + ([INBOX_LOCATION] if args.include_inbox else [])
     docs = []
+    max_ts = dict(cursors)
     for loc in locations:
+        cursor = None if args.full else cursors.get(loc)
         log(f"Listing Reader docs: {loc}" + (f" (since {cursor})" if cursor else " (full)"))
-        docs.extend(list_documents(loc, cursor, log))
+        loc_docs = list(list_documents(loc, cursor, log))
+        for meta in loc_docs:
+            ts = norm_ts(meta.get("updated_at") or meta.get("saved_at"))
+            if ts and (not max_ts.get(loc) or ts > max_ts[loc]):
+                max_ts[loc] = ts
+        docs.extend(loc_docs)
     if args.limit:
         docs = docs[: args.limit]
-    max_ts = state["cursors"]["reader_docs"]
     for meta in docs:
         doc_id = meta["id"]
         entry = state["documents"].get(doc_id, {})
         ts = norm_ts(meta.get("updated_at") or meta.get("saved_at"))
-        if ts and (not max_ts or ts > max_ts):
-            max_ts = ts
         fname = mint_filename(
             raw_dir, state["documents"], doc_id,
             f"{slugify(meta.get('title'))}-{doc_id[:8]}.md",
@@ -414,7 +432,8 @@ def sync_documents(args, state, raw_dir, ingested, today, results, log):
                 "content_hash": new_hash,
             }
     if not args.dry_run and not args.limit:
-        state["cursors"]["reader_docs"] = max_ts
+        for loc in locations:
+            cursors[loc] = max_ts.get(loc)
     log(f"Docs: {len(docs)} fetched")
 
 
